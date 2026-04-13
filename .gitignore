@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+
+# env
+.env
+
+# build outputs
+dist/
+build/
+bundle/
+
+# hardhat
+artifacts/
+cache/
+coverage/
+types/
+
+# python
+venv/
+__pycache__/

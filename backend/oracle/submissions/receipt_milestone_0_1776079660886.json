@@ -1,0 +1,17 @@
+{
+  "milestoneId": "0",
+  "submitterAddress": "0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA",
+  "filePath": "/home/sk/escrow-platform/backend/oracle/submissions/fibonacci.py",
+  "fileName": "fibonacci.py",
+  "fileSize": 627,
+  "contentHash": "53213d61d93e4f956c7b9b6ad90a04511dda1ba1df6a3ad44fe14da458acae43",
+  "ipfsCID": "QmTM3NaH3b8jZ5ugaw7zYyUejsZKcWPZqRAU9PSciqwE3H",
+  "evidenceTx": {
+    "txHash": "0xd7ddae224c4c827c3a8ff818bf8f54a9c323e8a91551545b80aecb8e2c1f4f2e",
+    "blockNumber": 10650715,
+    "gasUsed": "151549"
+  },
+  "escrowTx": null,
+  "completedAt": "2026-04-13T11:27:40.885Z",
+  "status": "SUBMITTED"
+}

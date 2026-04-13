@@ -1,0 +1,18 @@
+{
+  "network": "sepolia",
+  "deployedAt": "2026-04-10T17:11:13.038Z",
+  "deployer": "0xa1E107794e245aa2C7325b5BbF0AAA1F4a396c19",
+  "oracle": "0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA",
+  "contracts": {
+    "EscrowContract": "0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13",
+    "EvidenceRegistry": "0x1c9F7985388696c186116d2b4D81f0737709da75",
+    "DisputeContract": "0x6B7FDb04929F1c817D954205723e22f2BEfa2d5a",
+    "JuryStaking": "0xa0824C1aFDfd9E001948b09A2fb46d0bdDB19Ba6"
+  },
+  "etherscan": {
+    "EscrowContract": "https://sepolia.etherscan.io/address/0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13",
+    "EvidenceRegistry": "https://sepolia.etherscan.io/address/0x1c9F7985388696c186116d2b4D81f0737709da75",
+    "DisputeContract": "https://sepolia.etherscan.io/address/0x6B7FDb04929F1c817D954205723e22f2BEfa2d5a",
+    "JuryStaking": "https://sepolia.etherscan.io/address/0xa0824C1aFDfd9E001948b09A2fb46d0bdDB19Ba6"
+  }
+}

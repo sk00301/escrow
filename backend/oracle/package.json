@@ -1,0 +1,29 @@
+{
+  "name": "escrow-oracle",
+  "version": "1.0.0",
+  "description": "Oracle + IPFS + blockchain integration layer for the escrow platform",
+  "main": "oracle.js",
+  "scripts": {
+    "oracle":         "node oracle.js",
+    "oracle:pm2":     "pm2 start ecosystem.config.js",
+    "oracle:stop":    "pm2 stop oracle",
+    "oracle:logs":    "pm2 logs oracle",
+    "oracle:status":  "curl -s http://localhost:3001/oracle/status | python3 -m json.tool",
+    "test:oracle":    "node test-oracle.js",
+    "test:ipfs":      "node test-ipfs.js",
+    "submit":         "node submitWork.js",
+    "verify":         "node verifySubmission.js"
+  },
+  "dependencies": {
+    "@pinata/sdk": "^2.1.0",
+    "dotenv":      "^16.4.5",
+    "ethers":      "^6.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "pm2":     "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

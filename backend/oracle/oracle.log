@@ -1,0 +1,109 @@
+[2026-04-13T11:57:17.845Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T11:57:17.858Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T11:57:17.859Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T11:57:17.859Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T11:57:17.859Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T11:57:17.860Z] [INFO]   Status port:      3001
+[2026-04-13T11:57:17.861Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T11:57:17.861Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T11:57:17.877Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T11:57:17.966Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-04-13T11:57:18.652Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T11:57:18.672Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T11:57:18.680Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T11:57:18.681Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T11:57:18.681Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-04-13T12:02:27.823Z] [WARN] SIGINT received — shutting down oracle gracefully…
+[2026-04-13T12:02:37.950Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:02:37.959Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T12:02:37.959Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:02:37.959Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:02:37.959Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T12:02:37.960Z] [INFO]   Status port:      3001
+[2026-04-13T12:02:37.960Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T12:02:37.960Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:02:37.969Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T12:02:38.026Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-04-13T12:02:39.772Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T12:02:39.789Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T12:02:39.798Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:02:39.799Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T12:02:39.799Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-04-13T12:03:33.630Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:03:33.636Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T12:03:33.636Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:03:33.637Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:03:33.638Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T12:03:33.639Z] [INFO]   Status port:      3001
+[2026-04-13T12:03:33.639Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T12:03:33.639Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:03:33.644Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T12:03:33.726Z] [ERROR] Uncaught exception {"message":"bind EADDRINUSE null:3001","stack":"Error: bind EADDRINUSE null:3001\n    at listenOnPrimaryHandle (node:net:2021:18)\n    at rr (node:internal/cluster/child:163:12)\n    at Worker.<anonymous> (node:internal/cluster/child:113:7)\n    at process.onInternalMessage (node:internal/cluster/utils:49:5)\n    at process.emit (node:events:531:35)\n    at emit (node:internal/child_process:949:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)"}
+[2026-04-13T12:03:34.559Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T12:03:34.578Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T12:03:34.585Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:03:34.586Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T12:03:34.586Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-04-13T12:07:57.133Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:07:57.140Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T12:07:57.140Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:07:57.141Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:07:57.141Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T12:07:57.141Z] [INFO]   Status port:      3001
+[2026-04-13T12:07:57.141Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T12:07:57.141Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:07:57.151Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T12:07:57.206Z] [ERROR] Uncaught exception {"message":"listen EADDRINUSE: address already in use :::3001","stack":"Error: listen EADDRINUSE: address already in use :::3001\n    at Server.setupListenHandle [as _listen2] (node:net:1940:16)\n    at listenInCluster (node:net:1997:12)\n    at Server.listen (node:net:2102:7)\n    at startStatusServer (/home/sk/escrow-platform/backend/oracle/oracle.js:524:10)\n    at start (/home/sk/escrow-platform/backend/oracle/oracle.js:574:24)\n    at Object.<anonymous> (/home/sk/escrow-platform/backend/oracle/oracle.js:598:3)\n    at Module._compile (node:internal/modules/cjs/loader:1705:14)\n    at Object..js (node:internal/modules/cjs/loader:1838:10)\n    at Module.load (node:internal/modules/cjs/loader:1441:32)\n    at Function._load (node:internal/modules/cjs/loader:1263:12)"}
+[2026-04-13T12:08:02.950Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T12:08:02.971Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T12:08:02.981Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:08:02.981Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T12:08:02.981Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-04-13T12:08:10.491Z] [WARN] SIGINT received — shutting down oracle gracefully…
+[2026-04-13T12:13:11.388Z] [WARN] SIGTERM received — shutting down oracle gracefully…
+[2026-04-13T12:13:12.697Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:13:12.706Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T12:13:12.706Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:13:12.706Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:13:12.707Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T12:13:12.707Z] [INFO]   Status port:      3001
+[2026-04-13T12:13:12.707Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T12:13:12.707Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:13:12.717Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T12:13:12.775Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-04-13T12:13:13.733Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T12:13:13.754Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T12:13:13.763Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:13:13.763Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T12:13:13.763Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-04-13T12:13:17.112Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:13:17.116Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T12:13:17.117Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:13:17.118Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:13:17.118Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T12:13:17.118Z] [INFO]   Status port:      3001
+[2026-04-13T12:13:17.119Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T12:13:17.119Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:13:17.124Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T12:13:17.182Z] [ERROR] Uncaught exception {"message":"bind EADDRINUSE null:3001","stack":"Error: bind EADDRINUSE null:3001\n    at listenOnPrimaryHandle (node:net:2021:18)\n    at rr (node:internal/cluster/child:163:12)\n    at Worker.<anonymous> (node:internal/cluster/child:113:7)\n    at process.onInternalMessage (node:internal/cluster/utils:49:5)\n    at process.emit (node:events:531:35)\n    at emit (node:internal/child_process:949:14)\n    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)"}
+[2026-04-13T12:13:17.716Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T12:13:17.733Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T12:13:17.740Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:13:17.741Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T12:13:17.741Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-04-13T12:14:07.327Z] [WARN] SIGTERM received — shutting down oracle gracefully…
+[2026-04-13T12:14:13.321Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:14:13.326Z] [INFO]   Oracle Bridge Service starting…
+[2026-04-13T12:14:13.327Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:14:13.328Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:14:13.328Z] [INFO]   AI service:       http://localhost:8000
+[2026-04-13T12:14:13.329Z] [INFO]   Status port:      3001
+[2026-04-13T12:14:13.329Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-04-13T12:14:13.329Z] [INFO] ═══════════════════════════════════════════════════
+[2026-04-13T12:14:13.336Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-04-13T12:14:13.415Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-04-13T12:14:14.169Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-04-13T12:14:14.185Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-04-13T12:14:14.192Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-04-13T12:14:14.192Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-04-13T12:14:14.193Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status

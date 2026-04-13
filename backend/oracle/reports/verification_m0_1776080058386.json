@@ -1,0 +1,28 @@
+{
+  "milestoneId": "0",
+  "isAuthentic": true,
+  "chainRecord": {
+    "onChainHash": "53213d61d93e4f956c7b9b6ad90a04511dda1ba1df6a3ad44fe14da458acae43",
+    "ipfsCID": "QmTM3NaH3b8jZ5ugaw7zYyUejsZKcWPZqRAU9PSciqwE3H",
+    "submitter": "0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA",
+    "recordedTimestamp": "2026-04-13T11:27:36.000Z",
+    "state": 2
+  },
+  "ipfsDownload": {
+    "downloadedHash": "53213d61d93e4f956c7b9b6ad90a04511dda1ba1df6a3ad44fe14da458acae43",
+    "downloadTimestamp": "2026-04-13T11:34:17.797Z"
+  },
+  "hashComparison": {
+    "onChainHash": "53213d61d93e4f956c7b9b6ad90a04511dda1ba1df6a3ad44fe14da458acae43",
+    "downloadedHash": "53213d61d93e4f956c7b9b6ad90a04511dda1ba1df6a3ad44fe14da458acae43",
+    "recomputedHash": "53213d61d93e4f956c7b9b6ad90a04511dda1ba1df6a3ad44fe14da458acae43",
+    "chainMatchesDownload": true,
+    "downloadMatchesRecompute": true,
+    "chainMatchesRecomputed": true,
+    "allMatch": true
+  },
+  "auditTrail": [],
+  "verifiedAt": "2026-04-13T11:34:18.385Z",
+  "elapsed": "9.8s",
+  "verdict": "AUTHENTIC — The submission for milestone 0 is cryptographically verified. The file on IPFS (CID: QmTM3NaH3b8jZ5ugaw7zYyUejsZKcWPZqRAU9PSciqwE3H) matches the hash permanently recorded on-chain by submitter 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA at 2026-04-13T11:27:36.000Z."
+}
