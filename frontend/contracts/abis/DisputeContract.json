@@ -1,0 +1,139 @@
+{
+  "contractName": "DisputeContract",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        { "name": "_escrowContract", "type": "address" },
+        { "name": "_juryStaking",    "type": "address" }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createDispute",
+      "inputs": [
+        { "name": "milestoneId",  "type": "uint256" },
+        { "name": "client",       "type": "address" },
+        { "name": "freelancer",   "type": "address" },
+        { "name": "stakedAmount", "type": "uint256" }
+      ],
+      "outputs": [{ "name": "disputeId", "type": "uint256" }],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getDispute",
+      "inputs": [{ "name": "disputeId", "type": "uint256" }],
+      "outputs": [
+        { "name": "milestoneId",         "type": "uint256"   },
+        { "name": "client",              "type": "address"   },
+        { "name": "freelancer",          "type": "address"   },
+        { "name": "stakedAmount",        "type": "uint256"   },
+        { "name": "jurors",              "type": "address[]" },
+        { "name": "status",              "type": "uint8"     },
+        { "name": "releaseToFreelancer", "type": "bool"      },
+        { "name": "createdAt",           "type": "uint256"   },
+        { "name": "resolvedAt",          "type": "uint256"   }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getDisputeIdForMilestone",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getJurors",
+      "inputs": [{ "name": "disputeId", "type": "uint256" }],
+      "outputs": [{ "name": "", "type": "address[]" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "disputeCount",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "disputeExistsForMilestone",
+      "inputs": [{ "name": "", "type": "uint256" }],
+      "outputs": [{ "name": "", "type": "bool" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "milestoneToDispute",
+      "inputs": [{ "name": "", "type": "uint256" }],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "assignJurors",
+      "inputs": [
+        { "name": "disputeId", "type": "uint256"   },
+        { "name": "jurors",    "type": "address[]" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "startVoting",
+      "inputs": [{ "name": "disputeId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "submitJuryVerdict",
+      "inputs": [
+        { "name": "disputeId",            "type": "uint256" },
+        { "name": "releaseToFreelancer",  "type": "bool"    }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "DisputeCreated",
+      "inputs": [
+        { "name": "disputeId",    "type": "uint256", "indexed": true  },
+        { "name": "milestoneId",  "type": "uint256", "indexed": true  },
+        { "name": "client",       "type": "address", "indexed": true  },
+        { "name": "freelancer",   "type": "address", "indexed": false },
+        { "name": "stakedAmount", "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "JurorsAssigned",
+      "inputs": [
+        { "name": "disputeId", "type": "uint256",   "indexed": true  },
+        { "name": "jurors",    "type": "address[]", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "VotingStarted",
+      "inputs": [
+        { "name": "disputeId", "type": "uint256", "indexed": true }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "VerdictSubmitted",
+      "inputs": [
+        { "name": "disputeId",            "type": "uint256", "indexed": true  },
+        { "name": "milestoneId",          "type": "uint256", "indexed": true  },
+        { "name": "releaseToFreelancer",  "type": "bool",    "indexed": false }
+      ]
+    }
+  ]
+}

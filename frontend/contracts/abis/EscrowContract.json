@@ -1,0 +1,232 @@
+{
+  "contractName": "EscrowContract",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        { "name": "_oracleAddress",       "type": "address" },
+        { "name": "_juryContractAddress", "type": "address" }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "createMilestone",
+      "inputs": [
+        { "name": "freelancer",    "type": "address" },
+        { "name": "milestoneHash", "type": "bytes32" },
+        { "name": "deadline",      "type": "uint256" }
+      ],
+      "outputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "fundMilestone",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "submitWork",
+      "inputs": [
+        { "name": "milestoneId",  "type": "uint256" },
+        { "name": "evidenceHash", "type": "bytes32" },
+        { "name": "ipfsCID",      "type": "string"  }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "postVerificationResult",
+      "inputs": [
+        { "name": "milestoneId", "type": "uint256" },
+        { "name": "score",       "type": "uint256" },
+        { "name": "signature",   "type": "bytes"   }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "releasePayment",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "raiseDispute",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "resolveDispute",
+      "inputs": [
+        { "name": "milestoneId",         "type": "uint256" },
+        { "name": "releaseToFreelancer", "type": "bool"    }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getTimeoutRefund",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getMilestone",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "components": [
+            { "name": "client",       "type": "address" },
+            { "name": "freelancer",   "type": "address" },
+            { "name": "milestoneHash","type": "bytes32" },
+            { "name": "deadline",     "type": "uint256" },
+            { "name": "amount",       "type": "uint256" },
+            { "name": "evidenceHash", "type": "bytes32" },
+            { "name": "ipfsCID",      "type": "string"  },
+            { "name": "score",        "type": "uint256" },
+            { "name": "verdict",      "type": "string"  },
+            { "name": "state",        "type": "uint8"   },
+            { "name": "createdAt",    "type": "uint256" },
+            { "name": "fundedAt",     "type": "uint256" },
+            { "name": "submittedAt",  "type": "uint256" },
+            { "name": "resolvedAt",   "type": "uint256" }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getMilestoneState",
+      "inputs": [{ "name": "milestoneId", "type": "uint256" }],
+      "outputs": [{ "name": "", "type": "uint8" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getTotalMilestones",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "milestoneCount",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "oracleAddress",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "juryContractAddress",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "setOracleAddress",
+      "inputs": [{ "name": "_newOracle", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setJuryContractAddress",
+      "inputs": [{ "name": "_newJury", "type": "address" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "event",
+      "name": "MilestoneCreated",
+      "inputs": [
+        { "name": "milestoneId",   "type": "uint256", "indexed": true  },
+        { "name": "client",        "type": "address", "indexed": true  },
+        { "name": "freelancer",    "type": "address", "indexed": true  },
+        { "name": "milestoneHash", "type": "bytes32", "indexed": false },
+        { "name": "deadline",      "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "MilestoneFunded",
+      "inputs": [
+        { "name": "milestoneId", "type": "uint256", "indexed": true  },
+        { "name": "amount",      "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "WorkSubmitted",
+      "inputs": [
+        { "name": "milestoneId",  "type": "uint256", "indexed": true  },
+        { "name": "evidenceHash", "type": "bytes32", "indexed": false },
+        { "name": "ipfsCID",      "type": "string",  "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "VerificationResultPosted",
+      "inputs": [
+        { "name": "milestoneId", "type": "uint256", "indexed": true  },
+        { "name": "score",       "type": "uint256", "indexed": false },
+        { "name": "verdict",     "type": "string",  "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "PaymentReleased",
+      "inputs": [
+        { "name": "milestoneId", "type": "uint256", "indexed": true  },
+        { "name": "amount",      "type": "uint256", "indexed": false },
+        { "name": "freelancer",  "type": "address", "indexed": true  }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "DisputeRaised",
+      "inputs": [
+        { "name": "milestoneId", "type": "uint256", "indexed": true  },
+        { "name": "raisedBy",    "type": "address", "indexed": true  }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "DisputeResolved",
+      "inputs": [
+        { "name": "milestoneId",         "type": "uint256", "indexed": true  },
+        { "name": "releasedToFreelancer","type": "bool",    "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "TimeoutRefundIssued",
+      "inputs": [
+        { "name": "milestoneId", "type": "uint256", "indexed": true  },
+        { "name": "client",      "type": "address", "indexed": true  },
+        { "name": "amount",      "type": "uint256", "indexed": false }
+      ]
+    }
+  ]
+}

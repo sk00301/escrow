@@ -1,0 +1,178 @@
+{
+  "contractName": "JuryStaking",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [{ "name": "_disputeContract", "type": "address" }],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "stakeToBeJuror",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "payable"
+    },
+    {
+      "type": "function",
+      "name": "unstake",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "castVote",
+      "inputs": [
+        { "name": "disputeId",            "type": "uint256" },
+        { "name": "releaseToFreelancer",  "type": "bool"    }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "tallyVotes",
+      "inputs": [{ "name": "disputeId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "selectJurors",
+      "inputs": [
+        { "name": "disputeId", "type": "uint256" },
+        { "name": "count",     "type": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getPoolSize",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getSessionJurors",
+      "inputs": [{ "name": "disputeId", "type": "uint256" }],
+      "outputs": [{ "name": "", "type": "address[]" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getVoteCounts",
+      "inputs": [{ "name": "disputeId", "type": "uint256" }],
+      "outputs": [
+        { "name": "forFreelancer", "type": "uint256" },
+        { "name": "forClient",     "type": "uint256" },
+        { "name": "total",         "type": "uint256" }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "hasVoted",
+      "inputs": [
+        { "name": "disputeId", "type": "uint256" },
+        { "name": "juror",     "type": "address" }
+      ],
+      "outputs": [{ "name": "", "type": "bool" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getStake",
+      "inputs": [{ "name": "juror", "type": "address" }],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "jurors",
+      "inputs": [{ "name": "", "type": "address" }],
+      "outputs": [
+        { "name": "stakeAmount",     "type": "uint256" },
+        { "name": "isActive",        "type": "bool"    },
+        { "name": "activeDisputeId", "type": "uint256" },
+        { "name": "isAssigned",      "type": "bool"    }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "MIN_STAKE",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "protocolFees",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "JurorStaked",
+      "inputs": [
+        { "name": "juror",  "type": "address", "indexed": true  },
+        { "name": "amount", "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "JurorUnstaked",
+      "inputs": [
+        { "name": "juror",  "type": "address", "indexed": true  },
+        { "name": "amount", "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "JurorsSelected",
+      "inputs": [
+        { "name": "disputeId", "type": "uint256",   "indexed": true  },
+        { "name": "jurors",    "type": "address[]", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "VoteCast",
+      "inputs": [
+        { "name": "disputeId",            "type": "uint256", "indexed": true  },
+        { "name": "juror",                "type": "address", "indexed": true  },
+        { "name": "releaseToFreelancer",  "type": "bool",    "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "VotesTallied",
+      "inputs": [
+        { "name": "disputeId",            "type": "uint256", "indexed": true  },
+        { "name": "releaseToFreelancer",  "type": "bool",    "indexed": false },
+        { "name": "votesForFreelancer",   "type": "uint256", "indexed": false },
+        { "name": "votesForClient",       "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "JurorRewarded",
+      "inputs": [
+        { "name": "juror",  "type": "address", "indexed": true  },
+        { "name": "amount", "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "JurorSlashed",
+      "inputs": [
+        { "name": "juror",  "type": "address", "indexed": true  },
+        { "name": "amount", "type": "uint256", "indexed": false }
+      ]
+    }
+  ]
+}
