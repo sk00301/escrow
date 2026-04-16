@@ -1,23 +1,174 @@
 'use client';
-import { use } from 'react';
+
+/**
+ * app/verification/[contractId]/page.jsx
+ *
+ * Verification results page — now wired to the real FastAPI service.
+ *
+ * Data flow:
+ *   1. Load milestone from ContractContext (on-chain data)
+ *   2. If milestone has an ipfsCID (work submitted), derive jobId and poll
+ *      GET /result/{jobId} every 10s via useVerification hook
+ *   3. Map API response fields to UI components
+ *   4. Show "Release Payment" to client when verdict === APPROVED
+ *   5. Show "Raise Dispute" to either party when verdict === DISPUTED
+ */
+
+import { use, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { StatusBadge } from '@/components/status-badge';
+import { TransactionModal } from '@/components/transaction-modal';
 import { useContracts } from '@/contexts/contract-context';
+import { useWallet } from '@/contexts/wallet-context';
+import { useToast } from '@/hooks/use-toast';
+import { useVerification } from '@/hooks/use-verification';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, CheckCircle, XCircle, AlertTriangle, FileCode, ExternalLink, Shield, Clock, Hash, Activity, ChevronRight, } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ArrowLeft, CheckCircle, XCircle, AlertTriangle, FileCode,
+  ExternalLink, Shield, Clock, Hash, Activity, ChevronRight,
+  RefreshCw, Loader2, DollarSign, Scale,
+} from 'lucide-react';
 import { format } from 'date-fns';
+
+// ── Skeleton loader shown while fetching on first load ────────────────────────
+
+function VerificationSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="glass-card rounded-2xl border border-border p-6">
+        <Skeleton className="h-8 w-2/3 mb-3" />
+        <Skeleton className="h-4 w-1/2 mb-6" />
+        <div className="grid grid-cols-4 gap-4 pt-6 border-t border-border">
+          {[1,2,3,4].map(i => <div key={i}><Skeleton className="h-3 w-16 mb-2"/><Skeleton className="h-5 w-24"/></div>)}
+        </div>
+      </div>
+      <div className="glass-card rounded-2xl border border-border p-6">
+        <Skeleton className="h-24 w-full" />
+      </div>
+      <div className="glass-card rounded-2xl border border-border p-6">
+        <Skeleton className="h-4 w-32 mb-4"/>
+        {[1,2,3].map(i => <Skeleton key={i} className="h-8 w-full mb-3"/>)}
+      </div>
+    </div>
+  );
+}
+
+// ── Pending / Running state shown while oracle is working ─────────────────────
+
+function PendingVerification({ result, onRefresh }) {
+  const elapsed = result?.elapsedSec ?? 0;
+  const isRunning = result?.status === 'RUNNING';
+  const estimatedTotal = 45; // typical verification takes ~45s
+  const progress = isRunning ? Math.min(90, Math.round((elapsed / estimatedTotal) * 100)) : 10;
+
+  return (
+    <div className="glass-card rounded-2xl border border-border p-12 text-center">
+      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+        <Loader2 className="h-8 w-8 text-primary animate-spin"/>
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-2">
+        {isRunning ? 'Verification Running' : 'Queued for Verification'}
+      </h3>
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-6">
+        {isRunning
+          ? 'The AI oracle is running pytest, pylint, and flake8 on the submission.'
+          : 'The verification job is queued and will start shortly.'}
+      </p>
+      <div className="max-w-xs mx-auto mb-4">
+        <div className="flex justify-between text-xs text-muted-foreground mb-1">
+          <span>Progress</span>
+          <span>~{Math.max(0, estimatedTotal - elapsed)}s remaining</span>
+        </div>
+        <Progress value={progress} className="h-2"/>
+      </div>
+      <p className="text-xs text-muted-foreground mb-4">
+        Auto-refreshing every 10 seconds
+      </p>
+      <Button variant="outline" size="sm" onClick={onRefresh}>
+        <RefreshCw className="mr-2 h-4 w-4"/>
+        Refresh Now
+      </Button>
+    </div>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function VerificationPage({ params }) {
-    const { contractId } = use(params);
-    const router = useRouter();
-    const { contracts, verificationResults } = useContracts();
-    const contract = contracts.find(c => c.id === contractId);
-    const result = verificationResults[contractId];
-    if (!contract) {
-        return (<div className="min-h-screen bg-background">
-        <Navbar />
+  const { contractId } = use(params);
+  const router         = useRouter();
+  const { walletAddress }                             = useWallet();
+  const { contracts, getContract, releasePayment, raiseDispute } = useContracts();
+  const { toast }      = useToast();
+
+  const [contract,         setContract]         = useState(null);
+  const [contractLoading,  setContractLoading]  = useState(true);
+  const [showReleaseModal, setShowReleaseModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+
+  // Load contract — from cache first, then on-chain if needed
+  useEffect(() => {
+    const cached = contracts.find(c => c.id === contractId);
+    if (cached) { setContract(cached); setContractLoading(false); return; }
+
+    getContract(contractId)
+      .then(c => { setContract(c); setContractLoading(false); })
+      .catch(() => setContractLoading(false));
+  }, [contractId, contracts, getContract]);
+
+  // Derive jobId — the oracle stores results keyed by milestoneId
+  // The ipfsCID on the contract tells us work was submitted
+  const jobId = contract?.ipfsCID ? contractId : null;
+
+  const { result, loading: verLoading, error: verError, refetch } = useVerification(jobId);
+
+  // Determine who is viewing
+  const isClient     = walletAddress?.toLowerCase() === contract?.clientAddress?.toLowerCase();
+  const isFreelancer = walletAddress?.toLowerCase() === contract?.freelancerAddress?.toLowerCase();
+
+  // Verdict colours
+  const verdict = result?.verdict;
+  const verdictColor = verdict === 'approved' ? 'text-[#10B981]'
+                     : verdict === 'rejected'  ? 'text-[#EF4444]'
+                     : verdict === 'disputed'  ? 'text-[#F59E0B]'
+                     : 'text-muted-foreground';
+  const verdictBg = verdict === 'approved' ? 'bg-[#10B981]/10 border-[#10B981]/30'
+                  : verdict === 'rejected'  ? 'bg-[#EF4444]/10 border-[#EF4444]/30'
+                  : 'bg-[#F59E0B]/10 border-[#F59E0B]/30';
+
+  // Action handlers
+  const handleRelease = useCallback(async () => {
+    try {
+      const res = await releasePayment(contractId);
+      toast({ title: 'Payment Released', description: 'Funds transferred to the freelancer.' });
+      return res;
+    } catch (err) {
+      toast({ title: 'Transaction Failed', description: err.message, variant: 'destructive' });
+      return { success: false, error: err.message };
+    }
+  }, [contractId, releasePayment, toast]);
+
+  const handleDispute = useCallback(async () => {
+    try {
+      const res = await raiseDispute(contractId);
+      toast({ title: 'Dispute Raised', description: 'The case has been sent to the jury.' });
+      return res;
+    } catch (err) {
+      toast({ title: 'Transaction Failed', description: err.message, variant: 'destructive' });
+      return { success: false, error: err.message };
+    }
+  }, [contractId, raiseDispute, toast]);
+
+  // ── Not found ──────────────────────────────────────────────────────────────
+
+  if (!contractLoading && !contract) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar/>
         <div className="flex flex-col items-center justify-center pt-32 px-4">
           <div className="glass-card rounded-2xl p-12 text-center max-w-md border border-border">
             <AlertTriangle className="h-12 w-12 text-[#F59E0B] mx-auto mb-4"/>
@@ -26,95 +177,96 @@ export default function VerificationPage({ params }) {
               No contract found with ID: <span className="font-mono text-sm">{contractId}</span>
             </p>
             <Button onClick={() => router.back()}>
-              <ArrowLeft className="mr-2 h-4 w-4"/>
-              Go Back
+              <ArrowLeft className="mr-2 h-4 w-4"/>Go Back
             </Button>
           </div>
         </div>
-      </div>);
-    }
-    const verdictColor = result?.verdict === 'approved'
-        ? 'text-[#10B981]'
-        : result?.verdict === 'rejected'
-            ? 'text-[#EF4444]'
-            : 'text-[#F59E0B]';
-    const verdictBg = result?.verdict === 'approved'
-        ? 'bg-[#10B981]/10 border-[#10B981]/30'
-        : result?.verdict === 'rejected'
-            ? 'bg-[#EF4444]/10 border-[#EF4444]/30'
-            : 'bg-[#F59E0B]/10 border-[#F59E0B]/30';
-    return (<div className="min-h-screen bg-background">
-      <Navbar />
+      </div>
+    );
+  }
 
+  // ── Main render ────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar/>
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-        {/* Back Button */}
+
         <Button variant="ghost" size="sm" className="mb-6 text-muted-foreground hover:text-foreground" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4"/>
-          Back
+          <ArrowLeft className="mr-2 h-4 w-4"/>Back
         </Button>
 
-        {/* Header */}
-        <div className="glass-card rounded-2xl border border-border p-6 mb-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <FileCode className="h-6 w-6 text-primary"/>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">{contract.milestoneTitle}</h1>
-                <p className="text-muted-foreground mt-1">{contract.description}</p>
-                <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <span className="font-mono text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                    {contract.id}
-                  </span>
-                  <Badge variant="outline" className="capitalize">
-                    {contract.deliverableType}
-                  </Badge>
+        {/* ── Contract header ── */}
+        {contractLoading ? (
+          <div className="glass-card rounded-2xl border border-border p-6 mb-6">
+            <Skeleton className="h-8 w-1/2 mb-3"/><Skeleton className="h-4 w-1/3"/>
+          </div>
+        ) : contract && (
+          <div className="glass-card rounded-2xl border border-border p-6 mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileCode className="h-6 w-6 text-primary"/>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-foreground">{contract.milestoneTitle}</h1>
+                  <p className="text-muted-foreground mt-1">{contract.description}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <span className="font-mono text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">{contract.id}</span>
+                    <Badge variant="outline" className="capitalize">{contract.deliverableType}</Badge>
+                  </div>
                 </div>
               </div>
+              <StatusBadge status={contract.status}/>
             </div>
-            <StatusBadge status={contract.status}/>
-          </div>
-
-          {/* Contract Details */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Amount</p>
-              <p className="font-semibold text-foreground">{contract.amount.toFixed(4)} ETH</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Deadline</p>
-              <p className="font-semibold text-foreground">
-                {format(new Date(contract.deadline), 'dd MMM yyyy')}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Client</p>
-              <p className="font-mono text-xs text-foreground">
-                {contract.clientAddress.slice(0, 6)}...{contract.clientAddress.slice(-4)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Freelancer</p>
-              <p className="font-mono text-xs text-foreground">
-                {contract.freelancerAddress.slice(0, 6)}...{contract.freelancerAddress.slice(-4)}
-              </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+              <div><p className="text-xs text-muted-foreground mb-1">Amount</p><p className="font-semibold">{contract.amount?.toFixed(4)} ETH</p></div>
+              <div><p className="text-xs text-muted-foreground mb-1">Deadline</p><p className="font-semibold">{format(new Date(contract.deadline), 'dd MMM yyyy')}</p></div>
+              <div><p className="text-xs text-muted-foreground mb-1">Client</p><p className="font-mono text-xs">{contract.clientAddress?.slice(0,6)}...{contract.clientAddress?.slice(-4)}</p></div>
+              <div><p className="text-xs text-muted-foreground mb-1">Freelancer</p><p className="font-mono text-xs">{contract.freelancerAddress?.slice(0,6)}...{contract.freelancerAddress?.slice(-4)}</p></div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Verification Result */}
-        {result ? (<>
-            {/* Verdict Banner */}
+        {/* ── Verification result area ── */}
+        {verLoading && !result ? (
+          <VerificationSkeleton/>
+        ) : verError ? (
+          <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6">
+            <XCircle className="h-10 w-10 text-destructive mx-auto mb-3"/>
+            <h3 className="font-semibold text-foreground mb-1">Could not load verification result</h3>
+            <p className="text-sm text-muted-foreground mb-4">{verError}</p>
+            <Button variant="outline" onClick={refetch}>
+              <RefreshCw className="mr-2 h-4 w-4"/>Try Again
+            </Button>
+          </div>
+        ) : !jobId ? (
+          /* Work not yet submitted */
+          <div className="glass-card rounded-2xl border border-border p-12 text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+              <Clock className="h-8 w-8 text-muted-foreground"/>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Awaiting Submission</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+              Work has not been submitted yet. Once the freelancer submits, the AI oracle will verify it automatically.
+            </p>
+          </div>
+        ) : result?.status === 'PENDING' || result?.status === 'RUNNING' ? (
+          <div className="mb-6">
+            <PendingVerification result={result} onRefresh={refetch}/>
+          </div>
+        ) : result?.status === 'COMPLETED' ? (
+          <>
+            {/* ── Verdict banner ── */}
             <div className={`rounded-2xl border p-6 mb-6 ${verdictBg}`}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  {result.verdict === 'approved' ? (<CheckCircle className="h-10 w-10 text-[#10B981] shrink-0"/>) : result.verdict === 'rejected' ? (<XCircle className="h-10 w-10 text-[#EF4444] shrink-0"/>) : (<AlertTriangle className="h-10 w-10 text-[#F59E0B] shrink-0"/>)}
+                  {verdict === 'approved' ? <CheckCircle className="h-10 w-10 text-[#10B981] shrink-0"/>
+                   : verdict === 'rejected' ? <XCircle className="h-10 w-10 text-[#EF4444] shrink-0"/>
+                   : <AlertTriangle className="h-10 w-10 text-[#F59E0B] shrink-0"/>}
                   <div>
                     <p className="text-sm text-muted-foreground">AI Verification Verdict</p>
-                    <p className={`text-2xl font-bold capitalize ${verdictColor}`}>
-                      {result.verdict}
-                    </p>
+                    <p className={`text-2xl font-bold uppercase ${verdictColor}`}>{verdict}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Submitted {format(new Date(result.submissionTimestamp), 'dd MMM yyyy, HH:mm')}
                     </p>
@@ -122,143 +274,186 @@ export default function VerificationPage({ params }) {
                 </div>
                 <div className="text-center sm:text-right">
                   <p className="text-sm text-muted-foreground">Overall Score</p>
-                  <p className={`text-5xl font-bold ${verdictColor}`}>{result.overallScore}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Confidence: {result.confidenceInterval[0]}–{result.confidenceInterval[1]}
-                  </p>
+                  <p className={`text-5xl font-bold ${verdictColor}`}>{result.overallScore ?? '—'}</p>
+                  <p className="text-xs text-muted-foreground mt-1">out of 100</p>
                 </div>
               </div>
-            </div>
 
-            {/* Score Breakdown */}
-            <div className="glass-card rounded-2xl border border-border p-6 mb-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary"/>
-                Score Breakdown
-              </h2>
-              <div className="space-y-4">
-                {Object.entries(result.breakdown).map(([key, value]) => (<div key={key}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm text-muted-foreground capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </span>
-                      <span className={`text-sm font-semibold ${value >= 85 ? 'text-[#10B981]' :
-                    value >= 65 ? 'text-[#F59E0B]' : 'text-[#EF4444]'}`}>
-                        {value}%
-                      </span>
-                    </div>
-                    <Progress value={value} className="h-2"/>
-                  </div>))}
+              {/* ── Action buttons ── */}
+              <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-current/10">
+                {/* Release Payment — client only, APPROVED verdict */}
+                {isClient && verdict === 'approved' && contract?.status !== 'released' && (
+                  <Button
+                    className="bg-[#10B981] hover:bg-[#10B981]/90 text-white gap-2"
+                    onClick={() => setShowReleaseModal(true)}
+                  >
+                    <DollarSign className="h-4 w-4"/>
+                    Release Payment
+                  </Button>
+                )}
+                {/* Raise Dispute — either party, DISPUTED verdict */}
+                {(isClient || isFreelancer) && verdict === 'disputed' && contract?.status !== 'resolved' && (
+                  <Button
+                    variant="outline"
+                    className="border-[#F59E0B]/50 text-[#F59E0B] hover:bg-[#F59E0B]/10 gap-2"
+                    onClick={() => setShowDisputeModal(true)}
+                  >
+                    <Scale className="h-4 w-4"/>
+                    Raise Dispute
+                  </Button>
+                )}
               </div>
             </div>
 
-            {/* Passed / Failed Tests */}
+            {/* ── Score breakdown ── */}
+            {Object.keys(result.breakdown ?? {}).length > 0 && (
+              <div className="glass-card rounded-2xl border border-border p-6 mb-6">
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary"/>Score Breakdown
+                </h2>
+                <div className="space-y-4">
+                  {Object.entries(result.breakdown).map(([key, value]) => (
+                    <div key={key}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm text-muted-foreground capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </span>
+                        <span className={`text-sm font-semibold ${
+                          value >= 75 ? 'text-[#10B981]' : value >= 45 ? 'text-[#F59E0B]' : 'text-[#EF4444]'
+                        }`}>{value}%</span>
+                      </div>
+                      <Progress value={value} className="h-2"/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Passed / Failed tests ── */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
-              {/* Passed Tests */}
               <div className="glass-card rounded-2xl border border-border p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-[#10B981]"/>
                   Passed Tests ({result.passedTests.length})
                 </h2>
-                <div className="space-y-2">
-                  {result.passedTests.map((test, i) => (<div key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle className="h-4 w-4 text-[#10B981] mt-0.5 shrink-0"/>
-                      <span className="text-foreground">{test}</span>
-                    </div>))}
-                </div>
+                {result.passedTests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tests passed.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {result.passedTests.map((test, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-[#10B981] mt-0.5 shrink-0"/>
+                        <span className="text-foreground font-mono text-xs">{test}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Failed Tests */}
               <div className="glass-card rounded-2xl border border-border p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <XCircle className="h-5 w-5 text-[#EF4444]"/>
                   Failed Tests ({result.failedTests.length})
                 </h2>
-                {result.failedTests.length === 0 ? (<p className="text-sm text-muted-foreground">All tests passed.</p>) : (<div className="space-y-2">
-                    {result.failedTests.map((test, i) => (<div key={i} className="flex items-start gap-2 text-sm">
+                {result.failedTests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">All tests passed.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {result.failedTests.map((test, i) => (
+                      <div key={i} className="flex items-start gap-2 text-sm">
                         <XCircle className="h-4 w-4 text-[#EF4444] mt-0.5 shrink-0"/>
-                        <span className="text-foreground">{test}</span>
-                      </div>))}
-                  </div>)}
-
-                {result.missingRequirements.length > 0 && (<div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-sm font-medium text-muted-foreground mb-2">Missing Requirements</p>
-                    <div className="space-y-2">
-                      {result.missingRequirements.map((req, i) => (<div key={i} className="flex items-start gap-2 text-sm">
-                          <AlertTriangle className="h-4 w-4 text-[#F59E0B] mt-0.5 shrink-0"/>
-                          <span className="text-foreground">{req}</span>
-                        </div>))}
-                    </div>
-                  </div>)}
+                        <span className="text-foreground font-mono text-xs">{test}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* On-Chain Proof */}
+            {/* ── On-chain proof ── */}
             <div className="glass-card rounded-2xl border border-border p-6 mb-6">
               <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary"/>
-                On-Chain Proof
+                <Shield className="h-5 w-5 text-primary"/>On-Chain Proof
               </h2>
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground shrink-0"/>
-                    <span className="text-sm text-muted-foreground">File Hash</span>
+              <div className="space-y-3">
+                {result.fileHash && (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground shrink-0"/>
+                      <span className="text-sm text-muted-foreground">Submission Hash</span>
+                    </div>
+                    <span className="font-mono text-xs text-foreground break-all">{result.fileHash}</span>
                   </div>
-                  <span className="font-mono text-xs text-foreground break-all">
-                    {result.fileHash}
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-muted-foreground shrink-0"/>
-                    <span className="text-sm text-muted-foreground">Oracle Signature</span>
+                )}
+                {result.ipfsCID && (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground shrink-0"/>
+                      <span className="text-sm text-muted-foreground">IPFS Link</span>
+                    </div>
+                    <a
+                      href={`https://gateway.pinata.cloud/ipfs/${result.ipfsCID}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-1 font-mono text-xs text-primary hover:underline break-all"
+                    >
+                      {result.ipfsCID}
+                      <ExternalLink className="h-3 w-3 shrink-0"/>
+                    </a>
                   </div>
-                  <span className="font-mono text-xs text-foreground break-all">
-                    {result.oracleSignature}
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground shrink-0"/>
-                    <span className="text-sm text-muted-foreground">IPFS Link</span>
-                  </div>
-                  <a href={`https://ipfs.io/ipfs/${result.ipfsLink.replace('ipfs://', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 font-mono text-xs text-primary hover:underline break-all">
-                    {result.ipfsLink}
-                    <ExternalLink className="h-3 w-3 shrink-0"/>
-                  </a>
-                </div>
+                )}
               </div>
             </div>
-          </>) : (
-        /* No verification result yet */
-        <div className="glass-card rounded-2xl border border-border p-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-              <Clock className="h-8 w-8 text-muted-foreground"/>
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Awaiting Verification</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Work has not been submitted yet or is currently being verified by the AI oracle.
-            </p>
-          </div>)}
+          </>
+        ) : result?.status === 'FAILED' ? (
+          <div className="glass-card rounded-2xl border border-destructive/30 bg-destructive/5 p-8 text-center mb-6">
+            <XCircle className="h-10 w-10 text-destructive mx-auto mb-3"/>
+            <h3 className="font-semibold text-foreground mb-1">Verification Failed</h3>
+            <p className="text-sm text-muted-foreground mb-1">{result.errorCode}</p>
+            <p className="text-sm text-muted-foreground">{result.errorMessage}</p>
+            <Button variant="outline" className="mt-4" onClick={refetch}>
+              <RefreshCw className="mr-2 h-4 w-4"/>Refresh
+            </Button>
+          </div>
+        ) : null}
 
-        {/* Acceptance Criteria */}
-        <div className="glass-card rounded-2xl border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-primary"/>
-            Acceptance Criteria
-          </h2>
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-muted-foreground">Required Test Pass Rate</span>
-            <span className="font-semibold text-foreground">{contract.acceptanceCriteria.testPassRate}%</span>
+        {/* ── Acceptance criteria (always shown if contract loaded) ── */}
+        {contract && (
+          <div className="glass-card rounded-2xl border border-border p-6">
+            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-primary"/>Acceptance Criteria
+            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm text-muted-foreground">Required Test Pass Rate</span>
+              <span className="font-semibold">{contract.acceptanceCriteria?.testPassRate ?? 75}%</span>
+            </div>
+            <div className="space-y-2">
+              {(contract.acceptanceCriteria?.requirements ?? []).map((req, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <ChevronRight className="h-4 w-4 text-primary shrink-0"/>
+                  <span className="text-foreground">{req}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-2">
-            {contract.acceptanceCriteria.requirements.map((req, i) => (<div key={i} className="flex items-center gap-2 text-sm">
-                <ChevronRight className="h-4 w-4 text-primary shrink-0"/>
-                <span className="text-foreground">{req}</span>
-              </div>))}
-          </div>
-        </div>
+        )}
       </main>
-    </div>);
+
+      {/* ── Release Payment modal ── */}
+      <TransactionModal
+        open={showReleaseModal}
+        onOpenChange={setShowReleaseModal}
+        action="Release Payment"
+        amount={contract?.amount}
+        onConfirm={handleRelease}
+      />
+
+      {/* ── Raise Dispute modal ── */}
+      <TransactionModal
+        open={showDisputeModal}
+        onOpenChange={setShowDisputeModal}
+        action="Raise Dispute"
+        onConfirm={handleDispute}
+      />
+    </div>
+  );
 }

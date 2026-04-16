@@ -1,8 +1,17 @@
 "use client";
+
+/**
+ * jury-overview.jsx
+ *
+ * Uses getJurorStats() to derive accuracy from on-chain VoteCast events
+ * rather than the local disputes array (which has no votes[] data).
+ */
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { StatsCard } from "@/components/stats-card";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
@@ -10,41 +19,54 @@ import { useWallet } from "@/contexts/wallet-context";
 import { useUser } from "@/contexts/user-context";
 import { useContracts } from "@/contexts/contract-context";
 import { ethers } from "ethers";
-import { Scale, CheckCircle, Clock, Coins, TrendingUp, AlertCircle, ArrowRight, Lock, Unlock } from "lucide-react";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Scale, CheckCircle, Clock, Coins, TrendingUp,
+  AlertCircle, Lock, Unlock,
+} from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+  DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function JuryOverview() {
-  const { walletAddress }                      = useWallet();
-  const { userProfile, userStats }             = useUser();
-  const { disputes, stakeToBeJuror, unstake, isLoading, contractError, etherscanTxLink, lastTx } = useContracts();
+  const { walletAddress }          = useWallet();
+  const { userProfile }            = useUser();
+  const {
+    disputes, getJurorStats,
+    stakeToBeJuror, unstake,
+    isLoading, contractError, etherscanTxLink, lastTx,
+  } = useContracts();
 
-  const [showStakeDialog,  setShowStakeDialog]  = useState(false);
+  const [jurorStats,        setJurorStats]        = useState(null);
+  const [statsLoading,      setStatsLoading]      = useState(false);
+  const [showStakeDialog,   setShowStakeDialog]   = useState(false);
   const [showUnstakeDialog, setShowUnstakeDialog] = useState(false);
-  const [stakeAmount, setStakeAmount] = useState("");
+  const [stakeAmount,       setStakeAmount]       = useState("");
 
-  // Filter disputes assigned to this wallet
+  // Fetch on-chain voting stats via VoteCast event query
+  useEffect(() => {
+    if (!walletAddress || !getJurorStats) return;
+    setStatsLoading(true);
+    getJurorStats(walletAddress)
+      .then(s => setJurorStats(s))
+      .catch(err => console.warn("[JuryOverview] getJurorStats:", err.message))
+      .finally(() => setStatsLoading(false));
+  }, [walletAddress, getJurorStats]);
+
+  // Disputes assigned to this juror
   const myDisputes = disputes.filter(d =>
     d.assignedJurors?.some(j => j?.toLowerCase() === walletAddress?.toLowerCase())
   );
-  const pendingDisputes   = myDisputes.filter(d => d.status !== "resolved");
-  const completedDisputes = myDisputes.filter(d => d.status === "resolved");
+  const pendingDisputes = myDisputes.filter(d => d.status !== "resolved");
 
-  // Accuracy: proportion of resolved disputes where this juror voted with the majority
-  // (In the prototype, `votes` array may be empty — so we fall back to 100%)
-  const correctVotes = completedDisputes.filter(d => {
-    const myVote = d.votes?.find(v => v.jurorAddress?.toLowerCase() === walletAddress?.toLowerCase())?.vote;
-    if (!myVote) return false;
-    return myVote === (d.releaseToFreelancer ? "freelancer" : "client");
-  }).length;
-  const accuracy = completedDisputes.length > 0
-    ? Math.round((correctVotes / completedDisputes.length) * 100)
-    : 0;
+  const stakedEth = userProfile?.juryStake ?? 0;
+  const isJuror   = userProfile?.isJuror   ?? false;
 
-  const stakedEth    = userProfile?.juryStake ?? 0;
-  const isJuror      = userProfile?.isJuror ?? false;
+  // Stats from on-chain events (fall back to local count if not loaded yet)
+  const totalCases  = jurorStats?.totalVotes   ?? myDisputes.length;
+  const accuracy    = jurorStats?.accuracyRate ?? 0;
 
   const handleStake = async () => {
     if (!stakeAmount) return;
@@ -68,18 +90,17 @@ export function JuryOverview() {
         <div className="flex gap-2">
           {!isJuror ? (
             <Button onClick={() => setShowStakeDialog(true)} disabled={isLoading}>
-              <Lock className="mr-2 h-4 w-4" />
-              Stake to Join
+              <Lock className="mr-2 h-4 w-4"/>Stake to Join
             </Button>
           ) : (
             <Button variant="outline" onClick={() => setShowUnstakeDialog(true)} disabled={isLoading}>
-              <Unlock className="mr-2 h-4 w-4" />
-              Unstake
+              <Unlock className="mr-2 h-4 w-4"/>Unstake
             </Button>
           )}
         </div>
       </div>
 
+      {/* TX feedback */}
       {contractError && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
           {contractError}
@@ -87,18 +108,24 @@ export function JuryOverview() {
       )}
       {lastTx && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-          ✅ Transaction confirmed —{" "}
+          ✅ {lastTx.description} confirmed —{" "}
           <a href={etherscanTxLink(lastTx.hash)} target="_blank" rel="noreferrer" className="text-primary underline">
             View on Sepolia Etherscan
           </a>
         </div>
       )}
 
+      {/* Stats cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatsCard title="Pending Votes"   value={pendingDisputes.length}  icon={Clock} />
-        <StatsCard title="Total Cases"     value={myDisputes.length}       icon={Scale} />
-        <StatsCard title="Voting Accuracy" value={accuracy}   suffix="%"  icon={TrendingUp} />
-        <StatsCard title="ETH Staked"      value={stakedEth.toFixed(4)} suffix=" ETH" icon={Coins} />
+        <StatsCard title="Pending Votes" value={pendingDisputes.length} icon={Clock}/>
+        <StatsCard title="Total Cases"   value={statsLoading ? "…" : totalCases} icon={Scale}/>
+        <StatsCard
+          title="Voting Accuracy"
+          value={statsLoading ? "…" : accuracy}
+          suffix="%"
+          icon={TrendingUp}
+        />
+        <StatsCard title="ETH Staked" value={stakedEth.toFixed(4)} suffix=" ETH" icon={Coins}/>
       </div>
 
       {/* Juror Status Card */}
@@ -112,11 +139,9 @@ export function JuryOverview() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Status</span>
-                {isJuror ? (
-                  <Badge className="bg-primary text-primary-foreground">Active Juror</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-muted-foreground">Not Staked</Badge>
-                )}
+                {isJuror
+                  ? <Badge className="bg-primary text-primary-foreground">Active Juror</Badge>
+                  : <Badge variant="outline" className="text-muted-foreground">Not Staked</Badge>}
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">ETH Staked</span>
@@ -124,31 +149,35 @@ export function JuryOverview() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Cases Resolved</span>
-                <span className="font-semibold">{completedDisputes.length}</span>
+                {statsLoading
+                  ? <Skeleton className="h-4 w-8"/>
+                  : <span className="font-semibold">{jurorStats?.totalVotes ?? 0}</span>}
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Minimum Stake</span>
-                <span className="font-semibold">0.01 ETH</span>
+                <span className="text-sm text-muted-foreground">Majority Aligned</span>
+                {statsLoading
+                  ? <Skeleton className="h-4 w-8"/>
+                  : <span className="font-semibold">{jurorStats?.correctVotes ?? 0}</span>}
               </div>
             </div>
             <div className="space-y-4">
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   {isJuror
-                    ? <CheckCircle className="h-4 w-4 text-primary" />
-                    : <AlertCircle className="h-4 w-4 text-muted-foreground" />}
-                  <span>{isJuror ? "Minimum Stake Met" : "Stake 0.01 ETH to join"}</span>
+                    ? <CheckCircle className="h-4 w-4 text-primary"/>
+                    : <AlertCircle className="h-4 w-4 text-muted-foreground"/>}
+                  <span>{isJuror ? "Minimum stake met (0.01 ETH)" : "Stake 0.01 ETH to join"}</span>
                 </div>
-                <div className="mt-2 flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 text-sm">
                   {myDisputes.length > 0
-                    ? <CheckCircle className="h-4 w-4 text-primary" />
-                    : <AlertCircle className="h-4 w-4 text-muted-foreground" />}
+                    ? <CheckCircle className="h-4 w-4 text-primary"/>
+                    : <AlertCircle className="h-4 w-4 text-muted-foreground"/>}
                   <span>{myDisputes.length > 0 ? "Has jury experience" : "No disputes assigned yet"}</span>
                 </div>
               </div>
               {!isJuror && (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
-                  Stake at least 0.01 ETH to be eligible for jury selection.
+                  Stake at least 0.01 ETH to be eligible for jury selection on disputed milestones.
                 </div>
               )}
             </div>
@@ -156,37 +185,31 @@ export function JuryOverview() {
         </CardContent>
       </Card>
 
-      {/* Pending Disputes */}
+      {/* Pending disputes */}
       {pendingDisputes.length > 0 && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Pending Votes</CardTitle>
-                <CardDescription>Disputes requiring your attention</CardDescription>
-              </div>
-            </div>
+            <CardTitle className="text-lg">Pending Votes</CardTitle>
+            <CardDescription>Disputes requiring your attention</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {pendingDisputes.slice(0, 3).map((dispute) => (
+              {pendingDisputes.slice(0, 3).map(dispute => (
                 <div
                   key={dispute.id}
                   className="flex items-center justify-between rounded-lg border border-border p-4"
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F59E0B]/10">
-                      <AlertCircle className="h-5 w-5 text-[#F59E0B]" />
+                      <AlertCircle className="h-5 w-5 text-[#F59E0B]"/>
                     </div>
                     <div>
                       <p className="font-medium text-foreground">{dispute.reason}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Milestone #{dispute.milestoneId}
-                      </p>
+                      <p className="text-sm text-muted-foreground">Milestone #{dispute.milestoneId}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <StatusBadge status="active" />
+                    <StatusBadge status="active"/>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Deadline: {new Date(dispute.votingDeadline).toLocaleDateString()}
                     </p>
@@ -202,7 +225,7 @@ export function JuryOverview() {
         <EmptyState
           icon="vote"
           title="No disputes assigned yet"
-          description="Once the admin selects jurors for a dispute, it will appear here."
+          description="Once the admin selects jurors for a disputed milestone, it will appear here."
         />
       )}
 
@@ -210,14 +233,14 @@ export function JuryOverview() {
       <Dialog open={showStakeDialog} onOpenChange={setShowStakeDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Stake ETH to Join the Jury Pool</DialogTitle>
+            <DialogTitle>Stake ETH to Join Jury Pool</DialogTitle>
             <DialogDescription>
-              Lock ETH (minimum 0.01) to become eligible for jury selection.
+              Lock ETH (minimum 0.01) to be eligible for jury selection on disputed milestones.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="stake-amount">Amount to Stake (ETH)</Label>
+              <Label htmlFor="stake-amount">Amount (ETH)</Label>
               <Input
                 id="stake-amount"
                 type="number"
@@ -225,18 +248,18 @@ export function JuryOverview() {
                 min="0.01"
                 placeholder="0.01"
                 value={stakeAmount}
-                onChange={(e) => setStakeAmount(e.target.value)}
+                onChange={e => setStakeAmount(e.target.value)}
                 className="mt-2"
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Minimum: 0.01 ETH. You cannot unstake while assigned to an active dispute.
+              Minimum: 0.01 ETH. If you vote against the majority your stake will be slashed.
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowStakeDialog(false)}>Cancel</Button>
             <Button onClick={handleStake} disabled={!stakeAmount || isLoading}>
-              <Lock className="mr-2 h-4 w-4" />
+              <Lock className="mr-2 h-4 w-4"/>
               {isLoading ? "Staking…" : "Stake & Join Pool"}
             </Button>
           </DialogFooter>
@@ -258,13 +281,13 @@ export function JuryOverview() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              You cannot unstake if you are currently assigned to an active dispute.
+              You cannot unstake while assigned to an active dispute.
             </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowUnstakeDialog(false)}>Cancel</Button>
             <Button onClick={handleUnstake} disabled={isLoading}>
-              <Unlock className="mr-2 h-4 w-4" />
+              <Unlock className="mr-2 h-4 w-4"/>
               {isLoading ? "Unstaking…" : "Unstake"}
             </Button>
           </DialogFooter>
