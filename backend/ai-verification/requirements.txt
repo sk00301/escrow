@@ -58,3 +58,7 @@ structlog==24.1.0                  # Structured JSON logging
 tenacity==8.3.0                    # Retry logic for oracle + Pinata calls
 rich==13.7.1                       # Pretty CLI output for scripts
 gitpython==3.1.43                  # Clone / inspect GitHub repos locally
+
+#LLM Intergration
+openai 
+anthropic 
