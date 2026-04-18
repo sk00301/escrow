@@ -1,0 +1,1175 @@
+{
+  "metrics": {
+    "total": 15,
+    "correct": 5,
+    "accuracy": 0.3333333333333333,
+    "precision": 0.5555555555555556,
+    "recall": 1.0,
+    "f1_score": 0.7142857142857143,
+    "false_positive_rate": 0.4,
+    "false_negative_rate": 0.0,
+    "tp": 5,
+    "fp": 4,
+    "tn": 6,
+    "fn": 0,
+    "auto_resolved": 10,
+    "auto_resolution_rate": 0.6666666666666666,
+    "avg_verification_time_s": 8.22499941926629,
+    "category_avg_scores": {
+      "passing": 0.9548,
+      "borderline": 0.7756000000000001,
+      "failing": 0.5414000000000001
+    }
+  },
+  "results": [
+    {
+      "project_id": 1,
+      "description": "Calculator \u2014 complete, all edge cases",
+      "category": "passing",
+      "expected": "APPROVED",
+      "actual": "APPROVED",
+      "score": 0.9548,
+      "verdict_match": true,
+      "elapsed_s": 9.03632057699906,
+      "details": {
+        "job_id": "8f94b08d-17b7-4c45-8910-329d4c6d0e00",
+        "milestone_id": "project-1",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_1",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.9548,
+        "score_breakdown": {
+          "test_pass_rate": 1.0,
+          "pylint_score": 0.897,
+          "flake8_score": 0.87,
+          "weighted_total": 0.9548,
+          "test_contribution": 0.6,
+          "pylint_contribution": 0.2243,
+          "flake8_contribution": 0.1305
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 10,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 1.0
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.97,
+          "pylint_score": 0.897,
+          "flake8_violations": 13,
+          "flake8_score": 0.87
+        },
+        "passed_tests": [
+          "test_submission.py::test_add_positive",
+          "test_submission.py::test_add_negative",
+          "test_submission.py::test_add_mixed",
+          "test_submission.py::test_subtract_basic",
+          "test_submission.py::test_subtract_negative_result",
+          "test_submission.py::test_multiply_positive",
+          "test_submission.py::test_multiply_zero",
+          "test_submission.py::test_divide_basic",
+          "test_submission.py::test_divide_float",
+          "test_submission.py::test_divide_by_zero_raises"
+        ],
+        "failed_tests": [],
+        "submission_hash": "d53a736b34d37bbf3b7a3dfe26e3c08f0abea3760e95922bde029ff318db0d0c",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T10:59:29.601050Z",
+        "started_at": "2026-04-17T10:59:29.602960Z",
+        "completed_at": "2026-04-17T10:59:36.430397Z"
+      }
+    },
+    {
+      "project_id": 2,
+      "description": "Grade calculator \u2014 complete, documented",
+      "category": "passing",
+      "expected": "APPROVED",
+      "actual": "APPROVED",
+      "score": 0.9608,
+      "verdict_match": true,
+      "elapsed_s": 6.019343915999343,
+      "details": {
+        "job_id": "a91ecba7-a7ee-48d3-b244-c72dcc2af9db",
+        "milestone_id": "project-2",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_2",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.9608,
+        "score_breakdown": {
+          "test_pass_rate": 1.0,
+          "pylint_score": 0.909,
+          "flake8_score": 0.89,
+          "weighted_total": 0.9608,
+          "test_contribution": 0.6,
+          "pylint_contribution": 0.2273,
+          "flake8_contribution": 0.1335
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 10,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 1.0
+        },
+        "static_summary": {
+          "pylint_raw_score": 9.09,
+          "pylint_score": 0.909,
+          "flake8_violations": 11,
+          "flake8_score": 0.89
+        },
+        "passed_tests": [
+          "test_submission.py::test_grade_a_plus",
+          "test_submission.py::test_grade_b",
+          "test_submission.py::test_grade_f",
+          "test_submission.py::test_exact_boundary_90",
+          "test_submission.py::test_exact_boundary_50",
+          "test_submission.py::test_invalid_score_high",
+          "test_submission.py::test_invalid_score_negative",
+          "test_submission.py::test_gpa_mapping",
+          "test_submission.py::test_class_average",
+          "test_submission.py::test_class_average_empty"
+        ],
+        "failed_tests": [],
+        "submission_hash": "344f691b4cd7e6e8f695108e87a294f55c987a1cb78210e8f5e658c590a0d64d",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T10:59:38.635280Z",
+        "started_at": "2026-04-17T10:59:38.636998Z",
+        "completed_at": "2026-04-17T10:59:44.611200Z"
+      }
+    },
+    {
+      "project_id": 3,
+      "description": "Linked list \u2014 all operations correct",
+      "category": "passing",
+      "expected": "APPROVED",
+      "actual": "APPROVED",
+      "score": 0.946,
+      "verdict_match": true,
+      "elapsed_s": 6.016674385000442,
+      "details": {
+        "job_id": "8d600585-df7b-48c5-bcd9-ee7dc52718d0",
+        "milestone_id": "project-3",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_3",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.946,
+        "score_breakdown": {
+          "test_pass_rate": 1.0,
+          "pylint_score": 0.862,
+          "flake8_score": 0.87,
+          "weighted_total": 0.946,
+          "test_contribution": 0.6,
+          "pylint_contribution": 0.2155,
+          "flake8_contribution": 0.1305
+        },
+        "test_summary": {
+          "total": 12,
+          "passed": 12,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 1.0
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.62,
+          "pylint_score": 0.862,
+          "flake8_violations": 13,
+          "flake8_score": 0.87
+        },
+        "passed_tests": [
+          "test_submission.py::test_insert_at_tail",
+          "test_submission.py::test_insert_at_head",
+          "test_submission.py::test_search_found",
+          "test_submission.py::test_search_not_found",
+          "test_submission.py::test_delete_middle",
+          "test_submission.py::test_delete_head",
+          "test_submission.py::test_delete_not_found",
+          "test_submission.py::test_delete_returns_true",
+          "test_submission.py::test_length",
+          "test_submission.py::test_empty_list",
+          "test_submission.py::test_length_after_delete",
+          "test_submission.py::test_insert_tail_empty"
+        ],
+        "failed_tests": [],
+        "submission_hash": "28806febc1db429d506e7619fdfcd80168bf04206d5517bdd07f484fe26353aa",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T10:59:44.655012Z",
+        "started_at": "2026-04-17T10:59:44.656162Z",
+        "completed_at": "2026-04-17T10:59:50.438456Z"
+      }
+    },
+    {
+      "project_id": 4,
+      "description": "Temp converter \u2014 correct + validation",
+      "category": "passing",
+      "expected": "APPROVED",
+      "actual": "APPROVED",
+      "score": 0.9722,
+      "verdict_match": true,
+      "elapsed_s": 6.016634734000036,
+      "details": {
+        "job_id": "085a8e0c-43fb-441c-908b-0369ec6d2ea2",
+        "milestone_id": "project-4",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_4",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.9722,
+        "score_breakdown": {
+          "test_pass_rate": 1.0,
+          "pylint_score": 0.955,
+          "flake8_score": 0.89,
+          "weighted_total": 0.9722,
+          "test_contribution": 0.6,
+          "pylint_contribution": 0.2387,
+          "flake8_contribution": 0.1335
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 10,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 1.0
+        },
+        "static_summary": {
+          "pylint_raw_score": 9.55,
+          "pylint_score": 0.955,
+          "flake8_violations": 11,
+          "flake8_score": 0.89
+        },
+        "passed_tests": [
+          "test_submission.py::test_boiling_point",
+          "test_submission.py::test_freezing_point",
+          "test_submission.py::test_body_temperature",
+          "test_submission.py::test_f_to_c_freezing",
+          "test_submission.py::test_absolute_zero_kelvin",
+          "test_submission.py::test_kelvin_to_celsius",
+          "test_submission.py::test_below_absolute_zero_raises",
+          "test_submission.py::test_negative_kelvin_raises",
+          "test_submission.py::test_f_to_kelvin",
+          "test_submission.py::test_room_temperature"
+        ],
+        "failed_tests": [],
+        "submission_hash": "c2a277739f385795879531ff440a98840a55c31ec8f77ee13f856e065e812404",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T10:59:50.672722Z",
+        "started_at": "2026-04-17T10:59:50.674095Z",
+        "completed_at": "2026-04-17T10:59:56.374861Z"
+      }
+    },
+    {
+      "project_id": 5,
+      "description": "Bank account \u2014 complete, all guards",
+      "category": "passing",
+      "expected": "APPROVED",
+      "actual": "APPROVED",
+      "score": 0.9402,
+      "verdict_match": true,
+      "elapsed_s": 9.02178396599993,
+      "details": {
+        "job_id": "5fbd1e31-03ff-485d-9f02-03a79583bbd6",
+        "milestone_id": "project-5",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_5",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.9402,
+        "score_breakdown": {
+          "test_pass_rate": 1.0,
+          "pylint_score": 0.821,
+          "flake8_score": 0.9,
+          "weighted_total": 0.9402,
+          "test_contribution": 0.6,
+          "pylint_contribution": 0.2052,
+          "flake8_contribution": 0.135
+        },
+        "test_summary": {
+          "total": 9,
+          "passed": 9,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 1.0
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.21,
+          "pylint_score": 0.821,
+          "flake8_violations": 10,
+          "flake8_score": 0.9
+        },
+        "passed_tests": [
+          "test_submission.py::test_initial_balance",
+          "test_submission.py::test_deposit",
+          "test_submission.py::test_withdraw",
+          "test_submission.py::test_overdraft_raises",
+          "test_submission.py::test_negative_deposit_raises",
+          "test_submission.py::test_zero_deposit_raises",
+          "test_submission.py::test_negative_withdraw_raises",
+          "test_submission.py::test_negative_initial_raises",
+          "test_submission.py::test_transaction_count"
+        ],
+        "failed_tests": [],
+        "submission_hash": "aa1bf7cd0d55f623d3b586bd1c1dfa739227eeefb34553e0815880d5dbd60d32",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T10:59:56.689095Z",
+        "started_at": "2026-04-17T10:59:56.690140Z",
+        "completed_at": "2026-04-17T11:00:02.740769Z"
+      }
+    },
+    {
+      "project_id": 6,
+      "description": "Calculator \u2014 no zero-division guard",
+      "category": "borderline",
+      "expected": "DISPUTED",
+      "actual": "APPROVED",
+      "score": 0.892,
+      "verdict_match": false,
+      "elapsed_s": 9.028178720000142,
+      "details": {
+        "job_id": "e7a07ac3-f9fa-42cf-a8f2-637a0e11c23f",
+        "milestone_id": "project-6",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_6",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.892,
+        "score_breakdown": {
+          "test_pass_rate": 0.9,
+          "pylint_score": 0.886,
+          "flake8_score": 0.87,
+          "weighted_total": 0.892,
+          "test_contribution": 0.54,
+          "pylint_contribution": 0.2215,
+          "flake8_contribution": 0.1305
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 9,
+          "failed": 1,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.9
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.86,
+          "pylint_score": 0.886,
+          "flake8_violations": 13,
+          "flake8_score": 0.87
+        },
+        "passed_tests": [
+          "test_submission.py::test_add_positive",
+          "test_submission.py::test_add_negative",
+          "test_submission.py::test_add_mixed",
+          "test_submission.py::test_subtract_basic",
+          "test_submission.py::test_subtract_negative_result",
+          "test_submission.py::test_multiply_positive",
+          "test_submission.py::test_multiply_zero",
+          "test_submission.py::test_divide_basic",
+          "test_submission.py::test_divide_float"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_divide_by_zero_raises",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "b11ca78d7bf82597a818f884a0fa961a9c0c7caff57db5f264a03a198c8021f9",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:05.716116Z",
+        "started_at": "2026-04-17T11:00:05.717386Z",
+        "completed_at": "2026-04-17T11:00:11.899138Z"
+      }
+    },
+    {
+      "project_id": 7,
+      "description": "Grade calc \u2014 boundary logic error",
+      "category": "borderline",
+      "expected": "DISPUTED",
+      "actual": "APPROVED",
+      "score": 0.9008,
+      "verdict_match": false,
+      "elapsed_s": 9.025590748999093,
+      "details": {
+        "job_id": "f68779a1-59b4-416b-8f5f-6107c0d1c51b",
+        "milestone_id": "project-7",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_7",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.9008,
+        "score_breakdown": {
+          "test_pass_rate": 0.9,
+          "pylint_score": 0.909,
+          "flake8_score": 0.89,
+          "weighted_total": 0.9008,
+          "test_contribution": 0.54,
+          "pylint_contribution": 0.2273,
+          "flake8_contribution": 0.1335
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 9,
+          "failed": 1,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.9
+        },
+        "static_summary": {
+          "pylint_raw_score": 9.09,
+          "pylint_score": 0.909,
+          "flake8_violations": 11,
+          "flake8_score": 0.89
+        },
+        "passed_tests": [
+          "test_submission.py::test_grade_a_plus",
+          "test_submission.py::test_grade_b",
+          "test_submission.py::test_grade_f",
+          "test_submission.py::test_exact_boundary_90",
+          "test_submission.py::test_invalid_score_high",
+          "test_submission.py::test_invalid_score_negative",
+          "test_submission.py::test_gpa_mapping",
+          "test_submission.py::test_class_average",
+          "test_submission.py::test_class_average_empty"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_exact_boundary_50",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "17f872d1a5a47730c89f775328d47495a002dc749999eb8018c3c910bd7fa038",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:14.744710Z",
+        "started_at": "2026-04-17T11:00:14.746577Z",
+        "completed_at": "2026-04-17T11:00:20.837592Z"
+      }
+    },
+    {
+      "project_id": 8,
+      "description": "Linked list \u2014 search broken",
+      "category": "borderline",
+      "expected": "DISPUTED",
+      "actual": "REJECTED",
+      "score": 0.3645,
+      "verdict_match": false,
+      "elapsed_s": 6.024206886999309,
+      "details": {
+        "job_id": "a0f1ea9b-7643-49a6-bcef-5cfbb891b2e8",
+        "milestone_id": "project-8",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_8",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "REJECTED",
+        "score": 0.3645,
+        "score_breakdown": {
+          "test_pass_rate": 0.0,
+          "pylint_score": 0.87,
+          "flake8_score": 0.98,
+          "weighted_total": 0.3645,
+          "test_contribution": 0.0,
+          "pylint_contribution": 0.2175,
+          "flake8_contribution": 0.147
+        },
+        "test_summary": {
+          "total": 0,
+          "passed": 0,
+          "failed": 0,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.0
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.7,
+          "pylint_score": 0.87,
+          "flake8_violations": 2,
+          "flake8_score": 0.98
+        },
+        "passed_tests": [],
+        "failed_tests": [],
+        "submission_hash": "4ebb619386712f15f9eb0e9ada726d306d5312dac4f3653c7dfdd495d9435837",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:23.783666Z",
+        "started_at": "2026-04-17T11:00:23.785476Z",
+        "completed_at": "2026-04-17T11:00:27.601305Z"
+      }
+    },
+    {
+      "project_id": 9,
+      "description": "Temp converter \u2014 no error handling",
+      "category": "borderline",
+      "expected": "DISPUTED",
+      "actual": "APPROVED",
+      "score": 0.8487,
+      "verdict_match": false,
+      "elapsed_s": 9.029051038000034,
+      "details": {
+        "job_id": "32f3c064-5f2a-4d67-8d61-65a6f04140f1",
+        "milestone_id": "project-9",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_9",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.8487,
+        "score_breakdown": {
+          "test_pass_rate": 0.8,
+          "pylint_score": 0.941,
+          "flake8_score": 0.89,
+          "weighted_total": 0.8487,
+          "test_contribution": 0.48,
+          "pylint_contribution": 0.2352,
+          "flake8_contribution": 0.1335
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 8,
+          "failed": 2,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.8
+        },
+        "static_summary": {
+          "pylint_raw_score": 9.41,
+          "pylint_score": 0.941,
+          "flake8_violations": 11,
+          "flake8_score": 0.89
+        },
+        "passed_tests": [
+          "test_submission.py::test_boiling_point",
+          "test_submission.py::test_freezing_point",
+          "test_submission.py::test_body_temperature",
+          "test_submission.py::test_f_to_c_freezing",
+          "test_submission.py::test_absolute_zero_kelvin",
+          "test_submission.py::test_kelvin_to_celsius",
+          "test_submission.py::test_f_to_kelvin",
+          "test_submission.py::test_room_temperature"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_below_absolute_zero_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_negative_kelvin_raises",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "4ad8b630f34b62e0496edde1914eaf2bcb4f20c0b41277e02b293de1dea089b5",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:29.808304Z",
+        "started_at": "2026-04-17T11:00:29.809644Z",
+        "completed_at": "2026-04-17T11:00:36.894452Z"
+      }
+    },
+    {
+      "project_id": 10,
+      "description": "Bank account \u2014 overdraft not guarded",
+      "category": "borderline",
+      "expected": "DISPUTED",
+      "actual": "APPROVED",
+      "score": 0.872,
+      "verdict_match": false,
+      "elapsed_s": 9.027335746999597,
+      "details": {
+        "job_id": "8376f11a-ffcc-45ff-a03e-885191dc447e",
+        "milestone_id": "project-10",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_10",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "APPROVED",
+        "score": 0.872,
+        "score_breakdown": {
+          "test_pass_rate": 0.8889,
+          "pylint_score": 0.815,
+          "flake8_score": 0.9,
+          "weighted_total": 0.872,
+          "test_contribution": 0.5333,
+          "pylint_contribution": 0.2037,
+          "flake8_contribution": 0.135
+        },
+        "test_summary": {
+          "total": 9,
+          "passed": 8,
+          "failed": 1,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.8889
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.15,
+          "pylint_score": 0.815,
+          "flake8_violations": 10,
+          "flake8_score": 0.9
+        },
+        "passed_tests": [
+          "test_submission.py::test_initial_balance",
+          "test_submission.py::test_deposit",
+          "test_submission.py::test_withdraw",
+          "test_submission.py::test_negative_deposit_raises",
+          "test_submission.py::test_zero_deposit_raises",
+          "test_submission.py::test_negative_withdraw_raises",
+          "test_submission.py::test_negative_initial_raises",
+          "test_submission.py::test_transaction_count"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_overdraft_raises",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "1a956e46a7e326a09d9ab115707091ba73357d44bc73e265011d5b0935dda6be",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:38.839769Z",
+        "started_at": "2026-04-17T11:00:38.841519Z",
+        "completed_at": "2026-04-17T11:00:45.197302Z"
+      }
+    },
+    {
+      "project_id": 11,
+      "description": "Calculator \u2014 wrong operators",
+      "category": "failing",
+      "expected": "REJECTED",
+      "actual": "DISPUTED",
+      "score": 0.652,
+      "verdict_match": false,
+      "elapsed_s": 9.023802457000784,
+      "details": {
+        "job_id": "ebb179c8-618d-4b5a-8e5d-2cd28e6ec3dc",
+        "milestone_id": "project-11",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_11",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "DISPUTED",
+        "score": 0.652,
+        "score_breakdown": {
+          "test_pass_rate": 0.5,
+          "pylint_score": 0.886,
+          "flake8_score": 0.87,
+          "weighted_total": 0.652,
+          "test_contribution": 0.3,
+          "pylint_contribution": 0.2215,
+          "flake8_contribution": 0.1305
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 5,
+          "failed": 5,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.5
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.86,
+          "pylint_score": 0.886,
+          "flake8_violations": 13,
+          "flake8_score": 0.87
+        },
+        "passed_tests": [
+          "test_submission.py::test_add_positive",
+          "test_submission.py::test_add_negative",
+          "test_submission.py::test_add_mixed",
+          "test_submission.py::test_subtract_basic",
+          "test_submission.py::test_subtract_negative_result"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_multiply_positive",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_multiply_zero",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_divide_basic",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_divide_float",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_divide_by_zero_raises",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "6fbf8371d54d5cf9c4d5c39b0e6001d97ffa7f228984496e0014326d35497969",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:47.877745Z",
+        "started_at": "2026-04-17T11:00:47.878992Z",
+        "completed_at": "2026-04-17T11:00:54.237842Z"
+      }
+    },
+    {
+      "project_id": 12,
+      "description": "Grade calc \u2014 wrong thresholds",
+      "category": "failing",
+      "expected": "REJECTED",
+      "actual": "DISPUTED",
+      "score": 0.544,
+      "verdict_match": false,
+      "elapsed_s": 9.025893771999108,
+      "details": {
+        "job_id": "0bc58748-bebd-4f45-8889-9935dc462cd9",
+        "milestone_id": "project-12",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_12",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "DISPUTED",
+        "score": 0.544,
+        "score_breakdown": {
+          "test_pass_rate": 0.3,
+          "pylint_score": 0.922,
+          "flake8_score": 0.89,
+          "weighted_total": 0.544,
+          "test_contribution": 0.18,
+          "pylint_contribution": 0.2305,
+          "flake8_contribution": 0.1335
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 3,
+          "failed": 7,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.3
+        },
+        "static_summary": {
+          "pylint_raw_score": 9.22,
+          "pylint_score": 0.922,
+          "flake8_violations": 11,
+          "flake8_score": 0.89
+        },
+        "passed_tests": [
+          "test_submission.py::test_grade_a_plus",
+          "test_submission.py::test_grade_f",
+          "test_submission.py::test_class_average"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_grade_b",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_exact_boundary_90",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_exact_boundary_50",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_invalid_score_high",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_invalid_score_negative",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_gpa_mapping",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_class_average_empty",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "938720c51cff0205b887fe75d88c1f0b5814a11aca12bdcf141b04b71e28b34e",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:00:56.914631Z",
+        "started_at": "2026-04-17T11:00:56.916351Z",
+        "completed_at": "2026-04-17T11:01:03.097321Z"
+      }
+    },
+    {
+      "project_id": 13,
+      "description": "Linked list \u2014 insert broken",
+      "category": "failing",
+      "expected": "REJECTED",
+      "actual": "DISPUTED",
+      "score": 0.4955,
+      "verdict_match": false,
+      "elapsed_s": 9.028652307999437,
+      "details": {
+        "job_id": "07f41063-2f95-4e42-9856-03743340a5bf",
+        "milestone_id": "project-13",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_13",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "DISPUTED",
+        "score": 0.4955,
+        "score_breakdown": {
+          "test_pass_rate": 0.25,
+          "pylint_score": 0.86,
+          "flake8_score": 0.87,
+          "weighted_total": 0.4955,
+          "test_contribution": 0.15,
+          "pylint_contribution": 0.215,
+          "flake8_contribution": 0.1305
+        },
+        "test_summary": {
+          "total": 12,
+          "passed": 3,
+          "failed": 9,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.25
+        },
+        "static_summary": {
+          "pylint_raw_score": 8.6,
+          "pylint_score": 0.86,
+          "flake8_violations": 13,
+          "flake8_score": 0.87
+        },
+        "passed_tests": [
+          "test_submission.py::test_search_not_found",
+          "test_submission.py::test_delete_not_found",
+          "test_submission.py::test_empty_list"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_insert_at_tail",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_insert_at_head",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_search_found",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_delete_middle",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_delete_head",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_delete_returns_true",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_length",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_length_after_delete",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_insert_tail_empty",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "a5df1c4f4a1b2a8bdbcecce26f9f93f5f070f1a87b2ea320b56a6f0f6e2bf5ca",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:01:05.950945Z",
+        "started_at": "2026-04-17T11:01:05.952396Z",
+        "completed_at": "2026-04-17T11:01:12.446727Z"
+      }
+    },
+    {
+      "project_id": 14,
+      "description": "Temp converter \u2014 wrong formulas",
+      "category": "failing",
+      "expected": "REJECTED",
+      "actual": "DISPUTED",
+      "score": 0.4887,
+      "verdict_match": false,
+      "elapsed_s": 9.024216362999141,
+      "details": {
+        "job_id": "6a18ed15-a831-4561-9326-631e25940d8d",
+        "milestone_id": "project-14",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_14",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "DISPUTED",
+        "score": 0.4887,
+        "score_breakdown": {
+          "test_pass_rate": 0.2,
+          "pylint_score": 0.941,
+          "flake8_score": 0.89,
+          "weighted_total": 0.4887,
+          "test_contribution": 0.12,
+          "pylint_contribution": 0.2352,
+          "flake8_contribution": 0.1335
+        },
+        "test_summary": {
+          "total": 10,
+          "passed": 2,
+          "failed": 8,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.2
+        },
+        "static_summary": {
+          "pylint_raw_score": 9.41,
+          "pylint_score": 0.941,
+          "flake8_violations": 11,
+          "flake8_score": 0.89
+        },
+        "passed_tests": [
+          "test_submission.py::test_freezing_point",
+          "test_submission.py::test_kelvin_to_celsius"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_boiling_point",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_body_temperature",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_f_to_c_freezing",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_absolute_zero_kelvin",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_below_absolute_zero_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_negative_kelvin_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_f_to_kelvin",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_room_temperature",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "38705631e92a9922e2eec331a0ff5696c4e5de7e58af38d46e62859a41aab8be",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:01:14.980430Z",
+        "started_at": "2026-04-17T11:01:14.981711Z",
+        "completed_at": "2026-04-17T11:01:21.146423Z"
+      }
+    },
+    {
+      "project_id": 15,
+      "description": "Bank account \u2014 bare bones, no validation",
+      "category": "failing",
+      "expected": "REJECTED",
+      "actual": "DISPUTED",
+      "score": 0.5268,
+      "verdict_match": false,
+      "elapsed_s": 9.027305669998896,
+      "details": {
+        "job_id": "84c43e8a-9162-49b2-84a0-90d27e6e75e7",
+        "milestone_id": "project-15",
+        "submission_type": "local_path",
+        "submission_value": "tests/fixtures/sample_submissions/project_15",
+        "test_commands": [
+          "pytest"
+        ],
+        "acceptance_threshold": 0.75,
+        "status": "COMPLETED",
+        "verdict": "DISPUTED",
+        "score": 0.5268,
+        "score_breakdown": {
+          "test_pass_rate": 0.3333,
+          "pylint_score": 0.767,
+          "flake8_score": 0.9,
+          "weighted_total": 0.5268,
+          "test_contribution": 0.2,
+          "pylint_contribution": 0.1918,
+          "flake8_contribution": 0.135
+        },
+        "test_summary": {
+          "total": 9,
+          "passed": 3,
+          "failed": 6,
+          "errored": 0,
+          "skipped": 0,
+          "pass_rate": 0.3333
+        },
+        "static_summary": {
+          "pylint_raw_score": 7.67,
+          "pylint_score": 0.767,
+          "flake8_violations": 10,
+          "flake8_score": 0.9
+        },
+        "passed_tests": [
+          "test_submission.py::test_initial_balance",
+          "test_submission.py::test_deposit",
+          "test_submission.py::test_withdraw"
+        ],
+        "failed_tests": [
+          {
+            "name": "test_submission.py::test_overdraft_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_negative_deposit_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_zero_deposit_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_negative_withdraw_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_negative_initial_raises",
+            "status": "FAILED",
+            "error": ""
+          },
+          {
+            "name": "test_submission.py::test_transaction_count",
+            "status": "FAILED",
+            "error": ""
+          }
+        ],
+        "submission_hash": "50af3bc61a524b111cad0ab7d282e559500a4113a04048d12cd48061701100ed",
+        "ipfs_cid": null,
+        "error_code": null,
+        "error_message": null,
+        "created_at": "2026-04-17T11:01:24.017523Z",
+        "started_at": "2026-04-17T11:01:24.018963Z",
+        "completed_at": "2026-04-17T11:01:30.417869Z"
+      }
+    }
+  ]
+}

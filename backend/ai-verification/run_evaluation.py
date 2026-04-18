@@ -84,36 +84,34 @@ def load_project_files(dataset_dir: Path, project_id: int) -> dict:
 # Helper: call the FastAPI /verify endpoint
 # ---------------------------------------------------------------------------
 def call_verify_endpoint(base_url: str, payload: dict) -> dict:
-    """
-    POST to /verify and return the parsed JSON response.
-    Expected response schema:
-        {
-          "score":   float,          # 0.0 – 1.0
-          "verdict": str,            # "APPROVED" | "DISPUTED" | "REJECTED"
-          "details": {
-            "tests_passed":  int,
-            "tests_total":   int,
-            "lint_score":    float,
-            "complexity":    float,
-            "breakdown":     dict
-          }
-        }
-    Falls back gracefully if the service is unavailable.
-    """
+    import time
     url = f"{base_url.rstrip('/')}/verify"
+    project_path = str(Path(args.dataset_dir if 'args' in dir() else './tests/fixtures/sample_submissions') / f"project_{payload['project_id']}")
+    
+    body = {
+        "milestone_id":       f"project-{payload['project_id']}",
+        "submission_type":    "local_path",
+        "submission_value":   project_path,
+        "test_commands":      ["pytest"],
+        "acceptance_threshold": 0.75,
+    }
     try:
-        response = requests.post(url, json=payload, timeout=60)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.ConnectionError:
-        # Return a mock structure so the script can be tested without the server
-        print(f"  [WARN] Cannot reach {url} — returning mock result for project {payload['project_id']}")
+        post = requests.post(url, json=body, timeout=30)
+        post.raise_for_status()
+        job_id = post.json()["job_id"]
+
+        for _ in range(60):           # poll up to 3 minutes
+            time.sleep(3)
+            poll = requests.get(f"{base_url}/result/{job_id}", timeout=10).json()
+            if poll["status"] in ("COMPLETED", "FAILED"):
+                return {
+                    "score":   poll.get("score") or poll.get("final_score", 0.0),
+                    "verdict": poll.get("verdict", "REJECTED"),
+                    "details": poll,
+                }
         return _mock_response(payload["project_id"])
-    except requests.exceptions.HTTPError as exc:
-        print(f"  [ERROR] HTTP {exc.response.status_code} for project {payload['project_id']}: {exc}")
-        return _mock_response(payload["project_id"])
-    except Exception as exc:                            # noqa: BLE001
-        print(f"  [ERROR] Unexpected error for project {payload['project_id']}: {exc}")
+    except Exception as exc:
+        print(f"  [ERROR] {exc}")
         return _mock_response(payload["project_id"])
 
 
