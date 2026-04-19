@@ -21,3 +21,5 @@ types/
 # python
 venv/
 __pycache__/
+
+.coverage
