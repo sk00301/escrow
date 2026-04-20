@@ -6,7 +6,7 @@ AI Verification Service — FastAPI application entry point.
 Responsibilities
 ────────────────
   • App initialisation with CORS, lifespan, error middleware
-  • Mount shared state (job store, rate limiter, start time) on app.state
+  • Mount shared state (job store, rate limiter, llm_provider, start time)
   • Include the central API router
   • Register global exception handlers for consistent error responses
 
@@ -68,6 +68,20 @@ async def lifespan(app: FastAPI):
         window_seconds=60,
     )
 
+    # ── LLM provider (new) ────────────────────────────────────────────────────
+    from app.services.llm import get_provider_from_config
+    try:
+        app.state.llm_provider = get_provider_from_config(settings)
+        logger.info(
+            "llm_provider_active | provider=%s",
+            app.state.llm_provider.name,
+        )
+    except Exception as exc:
+        # Non-fatal at startup — the /llm-verify endpoint will fail gracefully
+        # if the provider is misconfigured, but /verify still works.
+        logger.warning("llm_provider_init_failed | %s", exc)
+        app.state.llm_provider = None
+
     yield   # ← application runs here
 
     logger.info("service_stopping")
@@ -79,8 +93,8 @@ app = FastAPI(
     title="AI Verification Service",
     description=(
         "Automated milestone verification for the hybrid blockchain escrow platform. "
-        "Evaluates code submissions via pytest, pylint, and flake8, then returns a "
-        "normalised score (0.0–1.0) and APPROVED / DISPUTED / REJECTED verdict."
+        "POST /verify uses metric-based scoring (pytest + pylint + flake8). "
+        "POST /llm-verify uses LLM reasoning for semantic understanding."
     ),
     version=settings.app_version,
     docs_url="/docs",
@@ -93,7 +107,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,   # ["http://localhost:3000", ...]
+    allow_origins=settings.cors_origin_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,19 +129,12 @@ app.include_router(api_router)
 async def validation_error_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    """
-    FastAPI raises RequestValidationError when a Pydantic model rejects the
-    incoming request body.  We convert it to our standard error envelope so
-    the React frontend always gets the same shape.
-    """
-    # Flatten pydantic error list into a readable string
     errors = []
     for err in exc.errors():
         loc   = " → ".join(str(x) for x in err["loc"] if x != "body")
         msg   = err["msg"]
         errors.append(f"{loc}: {msg}" if loc else msg)
 
-    # exc.errors() can contain non-serialisable objects (e.g. ValueError in ctx).
     safe_errors = [{k: str(v) for k, v in e.items()} for e in exc.errors()]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

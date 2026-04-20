@@ -106,7 +106,6 @@ class VerifyRequest(BaseModel):
     @field_validator("submission_value")
     @classmethod
     def validate_submission_value(cls, v: str, info) -> str:
-        # We can't access other fields easily in field_validator without model_validator
         return v.strip()
 
     @model_validator(mode="after")
@@ -143,6 +142,135 @@ class VerifyRequest(BaseModel):
         return [c.strip() for c in cmds]
 
 
+# ── NEW: LLM endpoint request / response ─────────────────────────────────────
+
+class LLMVerifyRequest(BaseModel):
+    """
+    Body for  POST /llm-verify
+
+    Extends VerifyRequest with acceptance_criteria (required) and an
+    optional per-request LLM provider override.
+
+    Example:
+        {
+          "milestone_id": "milestone-42",
+          "submission_type": "local_path",
+          "submission_value": "./tests/fixtures/sample_submissions/01_calculator_complete",
+          "test_commands": ["pytest tests/ -v"],
+          "acceptance_criteria": "Implement a calculator with add, subtract, multiply,
+                                  divide (zero-division guard), power, sqrt, modulo.",
+          "acceptance_threshold": 0.75
+        }
+    """
+    milestone_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="On-chain milestone ID",
+        examples=["milestone-42"],
+    )
+    submission_type: SubmissionType = Field(
+        ...,
+        description="How the submission is delivered",
+    )
+    submission_value: str = Field(
+        ...,
+        min_length=1,
+        max_length=512,
+        description="GitHub repo URL, IPFS CID, or local path",
+    )
+    test_commands: list[str] = Field(
+        default=["pytest"],
+        min_length=1,
+        description="Pytest commands to execute",
+    )
+    acceptance_criteria: str = Field(
+        ...,
+        min_length=10,
+        max_length=4096,
+        description=(
+            "Human-readable description of what the submission must do. "
+            "This is the primary input to the LLM reasoning pipeline."
+        ),
+        examples=[
+            "Implement a calculator with add, subtract, multiply, divide. "
+            "Handle division by zero with a ZeroDivisionError."
+        ],
+    )
+    acceptance_threshold: float = Field(
+        default=0.75,
+        ge=0.0,
+        le=1.0,
+        description="Score threshold for APPROVED verdict.",
+    )
+    llm_provider_override: str | None = Field(
+        default=None,
+        description=(
+            "Optional per-request LLM provider override. "
+            "Accepts: 'ollama', 'openai', 'anthropic'. "
+            "Defaults to the server-configured LLM_PROVIDER env var."
+        ),
+        examples=["openai", "ollama", None],
+    )
+
+    @field_validator("submission_value")
+    @classmethod
+    def strip_submission_value(cls, v: str) -> str:
+        return v.strip()
+
+    @model_validator(mode="after")
+    def validate_submission(self) -> "LLMVerifyRequest":
+        if self.submission_type == SubmissionType.GITHUB_URL:
+            if not self.submission_value.startswith(
+                ("https://github.com", "http://github.com", "git@github.com")
+            ):
+                raise ValueError(
+                    f"submission_value must be a valid GitHub URL. "
+                    f"Got: '{self.submission_value}'"
+                )
+        if self.submission_type == SubmissionType.IPFS_CID:
+            v = self.submission_value
+            if v.startswith("ipfs://"):
+                v = v[len("ipfs://"):]
+            if len(v) < 10:
+                raise ValueError(
+                    f"submission_value does not look like a valid IPFS CID. "
+                    f"Got: '{self.submission_value}'"
+                )
+        return self
+
+    @field_validator("test_commands")
+    @classmethod
+    def validate_test_commands(cls, cmds: list[str]) -> list[str]:
+        for cmd in cmds:
+            if not cmd.strip().startswith("pytest"):
+                raise ValueError(
+                    f"Only pytest commands are supported. Got: '{cmd}'"
+                )
+        return [c.strip() for c in cmds]
+
+    @field_validator("llm_provider_override")
+    @classmethod
+    def validate_provider_override(cls, v: str | None) -> str | None:
+        if v is not None and v not in ("ollama", "openai", "anthropic"):
+            raise ValueError(
+                f"llm_provider_override must be one of: ollama, openai, anthropic. "
+                f"Got: '{v}'"
+            )
+        return v
+
+
+class LLMVerifyResponse(BaseModel):
+    """Returned immediately by POST /llm-verify (202 Accepted)."""
+    job_id: str
+    status: JobStatus
+    message: str
+    llm_provider: str = Field(
+        description="Which LLM provider is processing this job (for frontend display).",
+        examples=["ollama/llama3.2:3b", "openai/gpt-4o-mini"],
+    )
+
+
 # ── Score / result sub-models ─────────────────────────────────────────────────
 
 class ScoreBreakdown(BaseModel):
@@ -175,8 +303,8 @@ class StaticSummary(BaseModel):
 
 class Job(BaseModel):
     """
-    The canonical job record.  Created by POST /verify, returned by
-    GET /result/{job_id}, listed by GET /jobs.
+    The canonical job record.  Created by POST /verify or POST /llm-verify,
+    returned by GET /result/{job_id}, listed by GET /jobs.
     """
     job_id: str = Field(
         default_factory=lambda: str(uuid.uuid4()),
@@ -199,7 +327,21 @@ class Job(BaseModel):
     passed_tests: list[str]                  = Field(default_factory=list)
     failed_tests: list[dict[str, Any]]       = Field(default_factory=list)
     submission_hash: str | None              = None
-    ipfs_cid: str | None                     = None   # set for ipfs_cid submissions
+    ipfs_cid: str | None                     = None
+
+    # ── LLM-specific fields (populated for /llm-verify jobs) ──────────────────
+    details: dict[str, Any] | None = Field(
+        default=None,
+        description="Full LLM verdict dict for /llm-verify jobs.",
+    )
+    llm_provider: str | None = Field(
+        default=None,
+        description="Which LLM provider processed this job.",
+    )
+    acceptance_criteria: str | None = Field(
+        default=None,
+        description="The acceptance criteria used for LLM evaluation.",
+    )
 
     # ── Error info (populated on FAILED) ──────────────────────────────────────
     error_code: str | None    = None
