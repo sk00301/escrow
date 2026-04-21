@@ -3,19 +3,13 @@ app/api/endpoints/llm_verify.py
 
 POST /llm-verify — LLM-powered code verification endpoint.
 
-Follows the same dependency-injection and job-lifecycle pattern as the
-existing POST /verify endpoint:
-  PENDING → RUNNING → COMPLETED | FAILED
-
-The CodeVerificationAgent runs in a thread-pool executor so its
-CPU-bound tool calls and blocking httpx requests don't block the event loop.
+Job lifecycle:  PENDING → RUNNING → COMPLETED | FAILED
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Request, status
 from fastapi.responses import JSONResponse
@@ -23,11 +17,9 @@ from fastapi.responses import JSONResponse
 from app.core.job_store import JobStore
 from app.core.rate_limiter import RateLimiter
 from app.models.schemas import (
-    Job,
     JobStatus,
     LLMVerifyRequest,
     LLMVerifyResponse,
-    SubmissionType,
     Verdict,
 )
 
@@ -36,7 +28,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-# ── Dependency helpers (mirror the pattern in verify.py) ─────────────────────
+# ── Dependency helpers ────────────────────────────────────────────────────────
 
 def _get_job_store(request: Request) -> JobStore:
     return request.app.state.job_store
@@ -62,11 +54,6 @@ def _get_settings(request: Request):
     status_code=status.HTTP_202_ACCEPTED,
     response_model=LLMVerifyResponse,
     summary="Submit a code submission for LLM-powered verification",
-    description=(
-        "Accepts a code submission and acceptance criteria, queues an LLM "
-        "verification job, and returns a job_id for polling. "
-        "The full verdict is available at GET /result/{job_id} once COMPLETED."
-    ),
 )
 async def llm_verify(
     body: LLMVerifyRequest,
@@ -74,7 +61,7 @@ async def llm_verify(
     request: Request,
 ) -> LLMVerifyResponse:
 
-# ── Rate limiting ─────────────────────────────────────────────────────────
+    # ── Rate limiting ─────────────────────────────────────────────────────────
     rate_limiter = _get_rate_limiter(request)
     client_ip = request.client.host if request.client else "unknown"
     allowed = await rate_limiter.is_allowed(client_ip)
@@ -92,15 +79,11 @@ async def llm_verify(
     llm_provider = _get_llm_provider(request)
     cfg = _get_settings(request)
 
-    # Handle optional per-request provider override
     if body.llm_provider_override:
         try:
             from app.services.llm.provider import LLMProvider
             llm_provider = LLMProvider.from_config(
                 _ProviderOverrideSettings(body.llm_provider_override, cfg)
-            )
-            logger.info(
-                "[llm_verify] per-request provider override: %s", body.llm_provider_override
             )
         except Exception as exc:
             return JSONResponse(
@@ -112,24 +95,25 @@ async def llm_verify(
                 },
             )
 
-    # ── Create job record ─────────────────────────────────────────────────────
+    # ── Create job using JobStore.create() with individual args ───────────────
     job_store = _get_job_store(request)
-    job = Job(
+    job = await job_store.create(
         milestone_id=body.milestone_id,
         submission_type=body.submission_type,
         submission_value=body.submission_value,
         test_commands=body.test_commands,
         acceptance_threshold=body.acceptance_threshold,
-        acceptance_criteria=body.acceptance_criteria,
-        llm_provider=llm_provider.name,
     )
-    await job_store.create(job)
+
+    # Attach LLM-specific fields directly on the job object
+    job.llm_provider = llm_provider.name
+    job.acceptance_criteria = body.acceptance_criteria
+
     logger.info(
         "[llm_verify] job_created job_id=%s milestone=%s provider=%s",
         job.job_id, body.milestone_id, llm_provider.name,
     )
 
-    # ── Queue background task ─────────────────────────────────────────────────
     background_tasks.add_task(
         _run_llm_verification,
         job_id=job.job_id,
@@ -156,13 +140,6 @@ async def _run_llm_verification(
     llm_provider,
     config,
 ) -> None:
-    """
-    Background coroutine that runs the full CodeVerificationAgent pipeline.
-
-    Job lifecycle:  PENDING → RUNNING → COMPLETED | FAILED
-    On COMPLETED:   stores the full LLM verdict dict in job.details
-    On FAILED:      stores error_code and error_message
-    """
     from app.services.agents.code_agent import CodeVerificationAgent
     from app.services.llm.provider import LLMProviderError
 
@@ -172,7 +149,6 @@ async def _run_llm_verification(
     try:
         agent = CodeVerificationAgent(llm=llm_provider, config=config)
 
-        # Run in executor — agent uses blocking subprocesses + httpx
         loop = asyncio.get_event_loop()
         verdict = await loop.run_in_executor(
             None,
@@ -185,19 +161,52 @@ async def _run_llm_verification(
             ),
         )
 
-        # Map LLM verdict string to Verdict enum
+        score = float(verdict.get("score", 0.0))
         verdict_str = verdict.get("verdict", "REJECTED").upper()
-        verdict_enum = Verdict(verdict_str) if verdict_str in Verdict._value2member_map_ else Verdict.REJECTED
+        try:
+            verdict_enum = Verdict(verdict_str)
+        except ValueError:
+            verdict_enum = Verdict.REJECTED
 
-        await job_store.mark_completed(
-            job_id=job_id,
-            verdict=verdict_enum,
-            score=float(verdict.get("score", 0.0)),
-            details=verdict,
-        )
+        # Bridge LLM verdict into the shape mark_completed() expects
+        tool_metrics = verdict.get("tool_metrics", {})
+        breakdown    = verdict.get("score_breakdown", {})
+        result_dict  = {
+            "final_score":    score,
+            "verdict":        verdict_enum.value,
+            "submission_hash": verdict.get("submission_hash", ""),
+            "passed_tests":   [],
+            "failed_tests":   [],
+            "weighted_breakdown": {
+                "test_contribution":   breakdown.get("test_execution", 0.0),
+                "pylint_contribution": breakdown.get("code_quality", 0.0),
+                "flake8_contribution": breakdown.get("requirements_coverage", 0.0),
+            },
+            "test_results": {
+                "total":    0,
+                "passed":   0,
+                "failed":   0,
+                "errored":  0,
+                "skipped":  0,
+                "pass_rate": tool_metrics.get("pytest_pass_rate", 0.0),
+            },
+            "static_analysis": {
+                "pylint_raw_score":  tool_metrics.get("pylint_score", 0.0),
+                "pylint_score":      min(1.0, tool_metrics.get("pylint_score", 0.0) / 10.0),
+                "flake8_violations": tool_metrics.get("flake8_violations", 0),
+                "flake8_score":      1.0,
+            },
+        }
+
+        job = await job_store.mark_completed(job_id=job_id, result=result_dict)
+
+        # Attach full LLM verdict so evaluation harness and frontend can read it
+        if job:
+            job.details = verdict
+
         logger.info(
             "[llm_verify] job_completed job_id=%s verdict=%s score=%.3f",
-            job_id, verdict_enum, verdict.get("score", 0.0),
+            job_id, verdict_enum.value, score,
         )
 
     except LLMProviderError as exc:
@@ -219,10 +228,7 @@ async def _run_llm_verification(
     except Exception as exc:
         logger.exception("[llm_verify] unexpected error job_id=%s", job_id)
         error_msg = str(exc)
-        if "ingest" in error_msg.lower() or "submission" in error_msg.lower():
-            code = "INGESTION_FAILED"
-        else:
-            code = "VERIFICATION_FAILED"
+        code = "INGESTION_FAILED" if ("ingest" in error_msg.lower() or "submission" in error_msg.lower()) else "VERIFICATION_FAILED"
         await job_store.mark_failed(
             job_id=job_id,
             error_code=code,
@@ -233,15 +239,11 @@ async def _run_llm_verification(
 # ── Provider override helper ──────────────────────────────────────────────────
 
 class _ProviderOverrideSettings:
-    """Minimal settings shim for per-request provider overrides."""
-
     def __init__(self, provider_name: str, base_config) -> None:
-        self.llm_provider = provider_name
-        # Copy all attributes from the real config
         for attr in dir(base_config):
             if not attr.startswith("_"):
                 try:
                     setattr(self, attr, getattr(base_config, attr))
                 except Exception:
                     pass
-        self.llm_provider = provider_name  # ensure override wins
+        self.llm_provider = provider_name

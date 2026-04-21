@@ -192,8 +192,9 @@ def print_results(results: list[CaseResult], target: float) -> None:
         actual_display = r.actual if r.status not in ("TIMEOUT","FAILED","ERROR") else f"[{r.status}]"
         print(f"  {r.folder:<12} {r.expected:<12} {actual_display:<12} "
               f"{r.score:<8.3f} {ok:<5} {r.duration_seconds:>5.0f}s")
-        if not r.correct and r.reasoning:
-            print(f"  {'':12} reasoning: {r.reasoning[:80]}...")
+        if r.reasoning:
+            label = "reasoning" if r.correct else "WRONG reasoning"
+            print(f"  {'':12} {label}: {r.reasoning[:200]}")
 
     # By category
     print(f"\n  By category:")
@@ -305,6 +306,10 @@ def main() -> None:
             writer.writeheader()
             writer.writerows(asdict(r) for r in results)
     print(f"CSV  saved to: {args.csv_out}")
+    print("\n  FULL VERDICT DETAILS:")
+    for r in results:
+        print(f"\n  [{r.case_id}] {r.folder} — expected={r.expected} actual={r.actual}")
+        # Read full details from evaluation_results.json
 
     accuracy = output["accuracy"]
     sys.exit(0 if accuracy >= target else 1)
