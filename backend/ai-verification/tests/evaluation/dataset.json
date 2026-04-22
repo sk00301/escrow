@@ -1,7 +1,7 @@
 {
   "version": "2.0",
-  "description": "LLM verification evaluation — 15 real projects",
-  "accuracy_target": 0.80,
+  "description": "LLM verification evaluation \u2014 15 real projects",
+  "accuracy_target": 0.8,
   "cases": [
     {
       "id": 1,
@@ -9,7 +9,9 @@
       "expected_verdict": "APPROVED",
       "category": "passing",
       "acceptance_criteria": "Implement a calculator module with add(a,b), subtract(a,b), multiply(a,b), divide(a,b), power(base,exp), modulo(a,b). divide() and modulo() must raise ValueError when the divisor is zero. All functions must have docstrings.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "Complete implementation. All guards present. All 10 tests pass."
     },
     {
@@ -18,7 +20,9 @@
       "expected_verdict": "APPROVED",
       "category": "passing",
       "acceptance_criteria": "Implement a student grade calculator with get_letter_grade(score) using boundaries A+>=90, A>=85, A->=80, B+>=75, B>=70, B->=65, C+>=60, C>=55, D>=50, F otherwise. get_gpa(score) returns GPA equivalent. class_average(scores) returns the mean. All functions raise ValueError for invalid inputs including empty lists.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "Complete implementation. Correct boundaries. All 10 tests pass."
     },
     {
@@ -27,7 +31,9 @@
       "expected_verdict": "APPROVED",
       "category": "passing",
       "acceptance_criteria": "Implement a singly linked list with insert_at_head(data), insert_at_tail(data), delete(data) returning bool, search(data) returning bool, to_list() returning a Python list, and length() returning node count. All operations must handle empty lists correctly.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "Complete implementation. All 12 tests pass."
     },
     {
@@ -36,7 +42,9 @@
       "expected_verdict": "APPROVED",
       "category": "passing",
       "acceptance_criteria": "Implement temperature converters: celsius_to_fahrenheit (F = C*9/5+32), fahrenheit_to_celsius (C = (F-32)*5/9), celsius_to_kelvin (K = C+273.15), kelvin_to_celsius (C = K-273.15), fahrenheit_to_kelvin. All functions must raise ValueError for temperatures below absolute zero or negative Kelvin.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "Complete implementation. Correct formulas and validation. All 10 tests pass."
     },
     {
@@ -45,7 +53,9 @@
       "expected_verdict": "APPROVED",
       "category": "passing",
       "acceptance_criteria": "Implement a BankAccount class with __init__(owner, initial_balance=0.0) raising ValueError for negative balance, deposit(amount) raising ValueError for non-positive amounts, withdraw(amount) raising ValueError for non-positive amounts or insufficient funds, a balance property, and transaction_count() returning the number of completed transactions.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "Complete implementation. All 9 tests pass."
     },
     {
@@ -54,8 +64,10 @@
       "expected_verdict": "DISPUTED",
       "category": "disputed",
       "acceptance_criteria": "Implement a calculator with add, subtract, multiply, divide, power, modulo. divide() MUST raise ValueError (not ZeroDivisionError) when b is zero. modulo() must also safely handle zero divisors.",
-      "test_commands": ["pytest test_submission.py -v"],
-      "notes": "Missing zero guard in divide() — raises raw ZeroDivisionError. Core arithmetic otherwise correct. 1 test fails."
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "Missing zero guard in divide() \u2014 raises raw ZeroDivisionError. Core arithmetic otherwise correct. 1 test fails."
     },
     {
       "id": 7,
@@ -63,7 +75,9 @@
       "expected_verdict": "DISPUTED",
       "category": "disputed",
       "acceptance_criteria": "Implement get_letter_grade(score) with exact boundaries A+>=90, A>=85, A->=80, B+>=75, B>=70, B->=65, C+>=60, C>=55, D>=50, F otherwise. Scores 50-54 MUST return D. Input validation required.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "Dead branch: D condition uses >=55 instead of >=50. Scores 50-54 return F incorrectly. 1 boundary test fails."
     },
     {
@@ -72,8 +86,10 @@
       "expected_verdict": "DISPUTED",
       "category": "disputed",
       "acceptance_criteria": "Implement a linked list where search(data) correctly finds values anywhere in the list including the head node. All traversal must start at self.head and check before advancing.",
-      "test_commands": ["pytest test_submission.py -v"],
-      "notes": "search() advances current before checking — skips the head node. Logic error in traversal order. Insert, delete, length all work correctly."
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "search() advances current before checking \u2014 skips the head node. Logic error in traversal order. Insert, delete, length all work correctly."
     },
     {
       "id": 9,
@@ -81,7 +97,9 @@
       "expected_verdict": "DISPUTED",
       "category": "disputed",
       "acceptance_criteria": "Implement temperature converters with correct formulas. kelvin_to_celsius(k) MUST raise ValueError for negative Kelvin. celsius_to_kelvin(c) and celsius_to_fahrenheit(c) MUST raise ValueError for inputs below absolute zero (-273.15C). Validation is mandatory.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "All formulas correct but no input validation. 2 validation tests fail."
     },
     {
@@ -90,8 +108,10 @@
       "expected_verdict": "DISPUTED",
       "category": "disputed",
       "acceptance_criteria": "Implement BankAccount where withdraw(amount) raises ValueError when the withdrawal amount exceeds the current balance. Overdraft must be prevented.",
-      "test_commands": ["pytest test_submission.py -v"],
-      "notes": "No overdraft check — allows negative balance. 1 test fails. All other features work."
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "No overdraft check \u2014 allows negative balance. 1 test fails. All other features work."
     },
     {
       "id": 11,
@@ -99,7 +119,9 @@
       "expected_verdict": "REJECTED",
       "category": "rejected",
       "acceptance_criteria": "Implement a calculator where multiply(a,b) returns a*b, divide(a,b) returns a/b and raises ValueError for zero divisor, power(base,exp) returns base**exp.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "multiply returns a+b, divide returns b/a with no guard, power returns base+exp. Three functions fundamentally wrong. 5 tests fail."
     },
     {
@@ -108,7 +130,9 @@
       "expected_verdict": "REJECTED",
       "category": "rejected",
       "acceptance_criteria": "Implement get_letter_grade with exact boundaries A+>=90, A>=85, A->=80, B+>=75, B>=70, B->=65, C+>=60, C>=55, D>=50. Must raise ValueError for scores outside 0-100. class_average must raise ValueError for empty list.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "All thresholds shifted up by 5. No input validation. No empty list guard in class_average. 7 tests fail."
     },
     {
@@ -117,8 +141,10 @@
       "expected_verdict": "REJECTED",
       "category": "rejected",
       "acceptance_criteria": "Implement a linked list where insert_at_head and insert_at_tail correctly update self.head so that inserted nodes are reachable via traversal.",
-      "test_commands": ["pytest test_submission.py -v"],
-      "notes": "insert_at_head and insert_at_tail never assign to self.head — nodes discarded. List always empty. 9 tests fail."
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "insert_at_head and insert_at_tail never assign to self.head \u2014 nodes discarded. List always empty. 9 tests fail."
     },
     {
       "id": 14,
@@ -126,7 +152,9 @@
       "expected_verdict": "REJECTED",
       "category": "rejected",
       "acceptance_criteria": "Implement temperature converters with correct formulas: celsius_to_fahrenheit must compute C*9/5+32, fahrenheit_to_celsius must compute (F-32)*5/9, celsius_to_kelvin must compute C+273.15.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "All three core formulas wrong. celsius_to_fahrenheit uses *5/9, fahrenheit_to_celsius adds 32 instead of subtracting, celsius_to_kelvin subtracts 273.15. 8 tests fail."
     },
     {
@@ -135,8 +163,49 @@
       "expected_verdict": "REJECTED",
       "category": "rejected",
       "acceptance_criteria": "Implement BankAccount with full validation: __init__ rejects negative initial balance, deposit rejects non-positive amounts, withdraw rejects non-positive amounts and overdrafts, transaction_count accurately tracks completed operations.",
-      "test_commands": ["pytest test_submission.py -v"],
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
       "notes": "No validation anywhere. No overdraft protection. transaction_count always returns 0. 6 tests fail."
+    },
+    {
+      "id": 16,
+      "folder": "srs_test_cases/case_a_approved",
+      "expected_verdict": "APPROVED",
+      "category": "passing",
+      "acceptance_criteria": "Implement an order pricing engine with calculate_item_total (raises ValueError for empty cart, zero/negative price or quantity), apply_tier_discount (bronze/silver/gold/platinum tiers, raises ValueError for unknown tier), apply_coupon (SAVE10/SAVE20/FLAT50/FLAT100 codes, case-insensitive, floors at 0.0, raises ValueError for unknown codes), calculate_tax (GB/DE/US/IN country codes, raises ValueError for unknown), and calculate_order_total returning a full breakdown dict. Never produce negative totals.",
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "SRS-generated tests. Complete implementation \u2014 all guards present.",
+      "requires_test_generation": true,
+      "srs_path": "srs_test_cases/case_a_approved/srs.md"
+    },
+    {
+      "id": 17,
+      "folder": "srs_test_cases/case_b_disputed",
+      "expected_verdict": "DISPUTED",
+      "category": "disputed",
+      "acceptance_criteria": "Implement a user authentication utility with hash_password (must reject passwords shorter than 8 characters, not 7), verify_password, generate_token (expiry_hours must result in correct expiry time \u2014 NOT multiplied by 60), and UserRegistry class with register/authenticate/delete_user/user_count/username_exists. Token expiry must be exactly expiry_hours from now.",
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "SRS-generated tests. Two bugs: off-by-one on password length (accepts 7 chars), token expiry multiplied by 60.",
+      "requires_test_generation": true,
+      "srs_path": "srs_test_cases/case_b_disputed/srs.md"
+    },
+    {
+      "id": 18,
+      "folder": "srs_test_cases/case_c_rejected",
+      "expected_verdict": "REJECTED",
+      "category": "rejected",
+      "acceptance_criteria": "Implement a sales data processor with clean_records (must filter empty/whitespace products AND negative revenue), total_revenue (must sum the revenue field not count records), revenue_by_product (must ACCUMULATE revenue per product not overwrite), top_products (must sort DESCENDING by revenue), and average_revenue_per_product (must divide by unique product count not record count).",
+      "test_commands": [
+        "pytest test_submission.py -v"
+      ],
+      "notes": "SRS-generated tests. Five fundamental logic errors across all functions.",
+      "requires_test_generation": true,
+      "srs_path": "srs_test_cases/case_c_rejected/srs.md"
     }
   ]
 }
