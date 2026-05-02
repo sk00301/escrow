@@ -9,7 +9,7 @@ import { useWallet }    from '@/contexts/wallet-context';
 import { useContracts } from '@/contexts/contract-context';
 
 const ROLES        = ['client', 'freelancer', 'jury'];
-const STORAGE_KEY  = 'escrowchain_active_role';
+const STORAGE_KEY  = 'aegistra_active_role';
 
 const UserContext = createContext(undefined);
 

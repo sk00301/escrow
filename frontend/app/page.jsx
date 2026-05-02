@@ -1,12 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { Navbar } from '@/components/navbar';
 import { WalletModal } from '@/components/wallet-modal';
 import { useWallet } from '@/contexts/wallet-context';
 import { useLivePlatformStats } from '@/hooks/use-live-platform-stats';
 import { Shield, Brain, Users, FileCheck, Wallet, Lock, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+const AEGISTRA_LOGO = '/Aegistra%20Logo.png';
 export default function LandingPage() {
     const [walletModalOpen, setWalletModalOpen] = useState(false);
     const { isConnected, provider, isCorrectNetwork } = useWallet();
@@ -74,7 +76,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 animate-slide-in-up">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Why Choose EscrowChain?
+              Why Choose Aegistra?
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Built on blockchain technology with AI-powered verification for the future of freelance work.
@@ -208,7 +210,7 @@ export default function LandingPage() {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Join freelancers and clients using EscrowChain for secure,
+            Join freelancers and clients using Aegistra for secure,
             transparent payments.
           </p>
           <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 cyan-glow gap-2 px-8 h-14 text-lg" onClick={() => setWalletModalOpen(true)}>
@@ -223,12 +225,14 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">E</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">
-                Escrow<span className="text-primary">Chain</span>
-              </span>
+              <Image
+                src={AEGISTRA_LOGO}
+                alt="Aegistra"
+                width={48}
+                height={48}
+                className="h-12 w-12 rounded-lg object-cover"
+              />
+              <span className="text-xl font-bold text-foreground">Aegistra</span>
             </div>
             
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -243,7 +247,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              {currentYear} EscrowChain. All rights reserved.
+              {currentYear} Aegistra. All rights reserved.
             </p>
           </div>
         </div>

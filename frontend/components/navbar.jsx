@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ const ROLE_CONFIG = {
 };
 
 const ROLE_HOMES = { client: '/client', freelancer: '/freelancer', jury: '/jury' };
+const AEGISTRA_LOGO_SMALL = '/Aegistra%20Logo%20small.png';
 
 export function Navbar() {
   const pathname  = usePathname();
@@ -72,12 +74,15 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">E</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">
-                Escrow<span className="text-primary">Chain</span>
-              </span>
+              <Image
+                src={AEGISTRA_LOGO_SMALL}
+                alt="Aegistra"
+                width={36}
+                height={36}
+                className="h-9 w-9 rounded-lg object-contain"
+                priority
+              />
+              <span className="text-xl font-bold text-foreground">Aegistra</span>
             </Link>
 
             {/* Desktop nav */}
