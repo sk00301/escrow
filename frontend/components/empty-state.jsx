@@ -26,6 +26,13 @@ export function EmptyState({ title, description, icon = 'contract', className })
             <path d="M35 45l8 8 15-15" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M35 65h30" stroke="#1E3A5F" strokeWidth="2" strokeLinecap="round"/>
           </svg>)}
+        {icon === 'wallet' && (<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="30" width="80" height="50" rx="6" stroke="#1E3A5F" strokeWidth="2" fill="#112233"/>
+            <path d="M10 45h80" stroke="#1E3A5F" strokeWidth="2"/>
+            <rect x="60" y="52" width="22" height="16" rx="4" fill="#00B4D8" fillOpacity="0.2" stroke="#00B4D8" strokeWidth="1.5"/>
+            <circle cx="71" cy="60" r="3" fill="#00B4D8"/>
+            <path d="M25 25h50" stroke="#1E3A5F" strokeWidth="2" strokeLinecap="round"/>
+          </svg>)}
       </div>
       <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-sm">{description}</p>

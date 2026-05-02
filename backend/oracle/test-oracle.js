@@ -18,7 +18,7 @@
 
 'use strict';
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
 const { ethers }  = require('ethers');
 const http        = require('http');

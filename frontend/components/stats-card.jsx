@@ -1,6 +1,8 @@
 'use client';
 import { cn } from '@/lib/utils';
 export function StatsCard({ title, value, icon: Icon, trend, suffix, className }) {
+    const trendLabel = trend?.label || 'vs previous 30 days';
+    const trendValue = Math.abs(Number(trend?.value ?? 0));
     return (<div className={cn('glass-card rounded-xl p-6 border border-border hover:border-primary/30 transition-all duration-200', className)}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -10,7 +12,8 @@ export function StatsCard({ title, value, icon: Icon, trend, suffix, className }
             {suffix && <span className="text-lg text-muted-foreground ml-1">{suffix}</span>}
           </p>
           {trend && (<p className={cn('text-xs mt-2', trend.positive ? 'text-[#10B981]' : 'text-[#EF4444]')}>
-              {trend.positive ? '+' : ''}{trend.value}% from last month
+              {trend.positive ? '+' : '-'}
+              {trendValue}% {trendLabel}
             </p>)}
         </div>
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">

@@ -13,7 +13,7 @@
 
 'use strict';
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
 const PinataSDK   = require('@pinata/sdk');
 const fs          = require('fs');

@@ -108,6 +108,54 @@ async function main() {
   fs.writeFileSync(ADDRESSES_FILE, JSON.stringify(output, null, 2));
   console.log(`📄 Addresses saved to: deployedAddresses.json\n`);
 
+  // ── Auto-sync addresses to frontend and backend .env ─────────────────────
+  const frontendAddresses = {
+    network:          output.network,
+    chainId:          output.chainId,
+    deployer:         deployer.address,
+    oracle:           oracleAddress,
+    EscrowContract:   deployed.EscrowContract,
+    EvidenceRegistry: deployed.EvidenceRegistry,
+    DisputeContract:  deployed.DisputeContract,
+    JuryStaking:      deployed.JuryStaking,
+  };
+
+  // Write to frontend/contracts/addresses.json
+  const FRONTEND_ADDRESSES = path.join(__dirname, "..", "..", "..", "frontend", "contracts", "addresses.json");
+  try {
+    fs.mkdirSync(path.dirname(FRONTEND_ADDRESSES), { recursive: true });
+    fs.writeFileSync(FRONTEND_ADDRESSES, JSON.stringify(frontendAddresses, null, 2));
+    console.log(`✅ Frontend addresses synced: ${FRONTEND_ADDRESSES}`);
+  } catch (e) {
+    console.warn(`⚠️  Could not write frontend addresses: ${e.message}`);
+    console.warn(`   Run: node scripts/sync-addresses.js manually`);
+  }
+
+  // Patch backend/.env with new contract addresses (non-destructive — only updates existing keys)
+  const BACKEND_ENV = path.join(__dirname, "..", "..", ".env");
+  if (fs.existsSync(BACKEND_ENV)) {
+    let envContent = fs.readFileSync(BACKEND_ENV, "utf8");
+    const patch = {
+      ESCROW_CONTRACT_ADDRESS:   deployed.EscrowContract,
+      EVIDENCE_REGISTRY_ADDRESS: deployed.EvidenceRegistry,
+      DISPUTE_CONTRACT_ADDRESS:  deployed.DisputeContract,
+      JURY_STAKING_ADDRESS:      deployed.JuryStaking,
+    };
+    for (const [key, val] of Object.entries(patch)) {
+      const regex = new RegExp(`^${key}=.*$`, "m");
+      if (regex.test(envContent)) {
+        envContent = envContent.replace(regex, `${key}=${val}`);
+      } else {
+        envContent += `\n${key}=${val}`;
+      }
+    }
+    fs.writeFileSync(BACKEND_ENV, envContent);
+    console.log(`✅ backend/.env contract addresses updated`);
+  } else {
+    console.warn(`⚠️  backend/.env not found — skipping env patch`);
+    console.warn(`   Copy backend/.env.example → backend/.env and fill in your keys first`);
+  }
+
   // ── 7. Etherscan verification (Sepolia only) ───────────────────────────────
   if (network.name === "sepolia") {
     console.log("⏳ Waiting 45s for Etherscan to index all contracts...");

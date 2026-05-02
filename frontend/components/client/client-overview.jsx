@@ -1,15 +1,59 @@
 'use client';
+import { useMemo } from 'react';
 import { StatsCard } from '@/components/stats-card';
 import { StatusBadge } from '@/components/status-badge';
 import { useContracts } from '@/contexts/contract-context';
 import { useUser } from '@/contexts/user-context';
+import { useWallet } from '@/contexts/wallet-context';
 import { Button } from '@/components/ui/button';
 import { FileText, Clock, Wallet, AlertTriangle, Eye, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function parseDate(value) {
+    const ts = new Date(value).getTime();
+    return Number.isFinite(ts) ? ts : null;
+}
+
+function calculateTrend(currentValue, previousValue, label) {
+    if (currentValue === 0 && previousValue === 0) return null;
+    if (previousValue === 0) return { value: 100, positive: currentValue >= previousValue, label };
+    const delta = ((currentValue - previousValue) / previousValue) * 100;
+    return { value: Math.round(Math.abs(delta)), positive: delta >= 0, label };
+}
+
 export function ClientOverview() {
     const { contracts } = useContracts();
     const { userStats } = useUser();
+    const { walletAddress } = useWallet();
+
+    const activeContractsTrend = useMemo(() => {
+        if (!walletAddress) return null;
+
+        const addr = walletAddress.toLowerCase();
+        const myClientContracts = contracts.filter(c => c.clientAddress?.toLowerCase() === addr);
+        if (myClientContracts.length === 0) return null;
+
+        const now = Date.now();
+        const comparePoint = now - THIRTY_DAYS_MS;
+        const previousActive = myClientContracts.filter((contract) => {
+            const createdAt = parseDate(contract.createdAt);
+            if (!createdAt || createdAt > comparePoint) return false;
+
+            const resolvedAt = parseDate(contract.resolvedAt);
+            if (!resolvedAt) return true;
+            return resolvedAt > comparePoint;
+        }).length;
+
+        return calculateTrend(
+            userStats.activeContracts || 0,
+            previousActive,
+            'vs 30 days ago'
+        );
+    }, [contracts, walletAddress, userStats.activeContracts]);
+
     const truncateAddress = (address) => {
         return `${address.slice(0, 6)}...${address.slice(-4)}`;
     };
@@ -23,7 +67,7 @@ export function ClientOverview() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard title="Active Contracts" value={userStats.activeContracts || 0} icon={FileText} trend={{ value: 12, positive: true }}/>
+        <StatsCard title="Active Contracts" value={userStats.activeContracts || 0} icon={FileText} trend={activeContractsTrend}/>
         <StatsCard title="Pending Reviews" value={userStats.pendingReviews || 0} icon={Clock}/>
         <StatsCard title="Total Paid" value={(userStats.totalPaid || 0).toFixed(4)} suffix="ETH" icon={Wallet}/>
         <StatsCard title="Disputes Open" value={userStats.disputesOpen || 0} icon={AlertTriangle}/>

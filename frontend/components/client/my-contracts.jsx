@@ -4,14 +4,17 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/status-badge';
 import { EmptyState } from '@/components/empty-state';
 import { useContracts } from '@/contexts/contract-context';
-import { ChevronDown, ChevronUp, Code, FileText, Palette, Calendar, Eye } from 'lucide-react';
+import { useWallet } from '@/contexts/wallet-context';
+import { ChevronDown, ChevronUp, Code, FileText, Palette, Calendar, Eye, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 export function MyContracts() {
-    const { contracts } = useContracts();
+    const { contracts, releasePayment, raiseDispute, disputes, isLoading } = useContracts();
+    const { walletAddress } = useWallet();
     const [filter, setFilter] = useState('all');
     const [expandedId, setExpandedId] = useState(null);
+    const [actionPending, setActionPending] = useState(null);
     const filteredContracts = filter === 'all'
         ? contracts
         : contracts.filter(c => c.status === filter);
@@ -142,13 +145,51 @@ export function MyContracts() {
                       </div>
                     </div>
 
-                    <div className="flex justify-end mt-6 gap-3">
+                    <div className="flex justify-end mt-6 gap-3 flex-wrap">
                       <Link href={`/verification/${contract.id}`}>
                         <Button variant="outline" className="border-border gap-2">
                           <Eye className="h-4 w-4"/>
                           View Details
                         </Button>
                       </Link>
+
+                      {/* Release payment — client releases once verified */}
+                      {contract.status === 'verified' &&
+                        contract.clientAddress?.toLowerCase() === walletAddress?.toLowerCase() && (
+                        <Button
+                          className="gap-2"
+                          disabled={actionPending === contract.id || isLoading}
+                          onClick={async () => {
+                            setActionPending(contract.id);
+                            try { await releasePayment(contract.id); }
+                            finally { setActionPending(null); }
+                          }}
+                        >
+                          {actionPending === contract.id
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Releasing…</>
+                            : <><CheckCircle className="h-4 w-4" />Release Payment</>}
+                        </Button>
+                      )}
+
+                      {/* Raise dispute — available when freelancer submitted and client disagrees */}
+                      {contract.status === 'disputed' &&
+                        contract.clientAddress?.toLowerCase() === walletAddress?.toLowerCase() &&
+                        !disputes.some(d => d.milestoneId === contract.id) && (
+                        <Button
+                          variant="destructive"
+                          className="gap-2"
+                          disabled={actionPending === contract.id || isLoading}
+                          onClick={async () => {
+                            setActionPending(contract.id);
+                            try { await raiseDispute(contract.id); }
+                            finally { setActionPending(null); }
+                          }}
+                        >
+                          {actionPending === contract.id
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Raising…</>
+                            : <><AlertTriangle className="h-4 w-4" />Raise Dispute</>}
+                        </Button>
+                      )}
                     </div>
                   </div>)}
               </div>);

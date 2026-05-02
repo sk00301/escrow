@@ -1,26 +1,19 @@
 "use client";
 
-/**
- * open-disputes.jsx
- *
- * Two fixes from the gap audit:
- *  1. Removed mockDisputes / mockMilestones imports — uses disputes from ContractContext
- *  2. handleVote now passes `reasoning` to voteOnDispute() so the signed
- *     message is stored in localStorage via contract-context.castVote()
- */
-
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
-import { useContract } from "@/contexts/contract-context";
+import { useContracts } from "@/contexts/contract-context";
 import { useWallet } from "@/contexts/wallet-context";
 import {
-  Scale, Clock, FileText, User, AlertTriangle,
-  CheckCircle, Eye, ThumbsUp, ThumbsDown,
+  Scale, Clock, FileText, User, AlertTriangle, CheckCircle,
+  Eye, Gavel, Loader2, ExternalLink, XCircle,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription,
@@ -31,113 +24,194 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+/**
+ * OpenDisputes
+ * ─────────────
+ * Shows disputes assigned to this juror.
+ * Key flows:
+ *   1. Review evidence (IPFS link + SRS)
+ *   2. Cast vote (client wins / freelancer wins) + optional reasoning
+ *   3. After ALL jurors have voted → Tally Votes button appears → calls tallyVotes()
+ *
+ * Status mapping (from DisputeContract.sol):
+ *   0 = OPEN → "open"
+ *   1 = JURORS_ASSIGNED → "jurors_assigned"
+ *   2 = VOTING → "voting"
+ *   3 = RESOLVED → "resolved"
+ */
 export function OpenDisputes() {
-  const { walletAddress }   = useWallet();
-  // disputes comes from DisputeCreated event query in ContractContext
-  const { disputes, voteOnDispute, isLoading } = useContract();
+  const { walletAddress } = useWallet();
+  const {
+    disputes, contracts,
+    voteOnDispute, tallyVotes,
+    isLoading,
+  } = useContracts();
 
-  const [selectedDispute, setSelectedDispute] = useState(null);
-  const [showVoteDialog,  setShowVoteDialog]  = useState(false);
-  const [vote,      setVote]      = useState(null);
-  const [reasoning, setReasoning] = useState("");
+  const [selectedDispute, setSelectedDispute]   = useState(null);
+  const [showVoteDialog,  setShowVoteDialog]     = useState(false);
+  const [vote,            setVote]               = useState("");       // "client" | "freelancer"
+  const [reasoning,       setReasoning]          = useState("");
+  const [actionPending,   setActionPending]      = useState(null);    // disputeId
 
-  // Filter to disputes where this wallet is an assigned juror
-  const myDisputes = disputes.filter(d =>
-    d.assignedJurors?.some(j => j?.toLowerCase() === walletAddress?.toLowerCase())
+  // Disputes this wallet is an assigned juror on
+  const myDisputes = disputes.filter((d) =>
+    d.assignedJurors?.some((j) => j?.toLowerCase() === walletAddress?.toLowerCase())
   );
-  const pendingDisputes  = myDisputes.filter(d => d.status !== "resolved");
-  const resolvedDisputes = myDisputes.filter(d => d.status === "resolved");
+  const pendingDisputes  = myDisputes.filter((d) => d.status !== "resolved");
+  const resolvedDisputes = myDisputes.filter((d) => d.status === "resolved");
 
-  const getVotingProgress = (dispute) => {
-    const total     = dispute.assignedJurors?.length || 1;
-    const submitted = dispute.votes?.length         || 0;
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  const getMilestone = (d) => contracts.find((c) => c.id === d.milestoneId);
+
+  const hasVoted = (dispute) =>
+    dispute.votes?.some(
+      (v) => v.jurorAddress?.toLowerCase() === walletAddress?.toLowerCase()
+    );
+
+  // All jurors have voted and votes haven't been tallied yet
+  const canTally = (dispute) => {
+    if (dispute.status === "resolved") return false;
+    const jurorCount = dispute.assignedJurors?.length ?? 0;
+    const voteCount  = dispute.votes?.length ?? 0;
+    return jurorCount > 0 && voteCount >= jurorCount;
+  };
+
+  const getVotingProgress = (d) => {
+    const total     = d.assignedJurors?.length || 1;
+    const submitted = d.votes?.length          || 0;
     return (submitted / total) * 100;
   };
 
   const getTimeRemaining = (deadline) => {
-    const diff  = new Date(deadline).getTime() - Date.now();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const hours = Math.floor((new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60));
     if (hours < 0)  return "Expired";
-    if (hours < 24) return `${hours} hours`;
-    return `${Math.floor(hours / 24)} days`;
+    if (hours < 24) return `${hours}h`;
+    return `${Math.floor(hours / 24)}d`;
   };
 
-  const hasVoted = (dispute) =>
-    dispute.votes?.some(v => v.jurorAddress?.toLowerCase() === walletAddress?.toLowerCase());
+  const statusLabel = (status) =>
+    ({ open: "Open", jurors_assigned: "Jurors Assigned", voting: "Voting", resolved: "Resolved" }[status] ?? status);
 
-  // ── FIX: pass reasoning as third argument so contract-context signs and stores it
+  // ── Actions ───────────────────────────────────────────────────────────────
+
   const handleVote = async () => {
     if (!selectedDispute || !vote) return;
-    await voteOnDispute(selectedDispute.id, vote, reasoning);
-    setShowVoteDialog(false);
-    setVote(null);
-    setReasoning("");
-    setSelectedDispute(null);
+    setActionPending(selectedDispute.id);
+    try {
+      await voteOnDispute(selectedDispute.id, vote, reasoning);
+      setShowVoteDialog(false);
+      setVote("");
+      setReasoning("");
+      setSelectedDispute(null);
+    } finally {
+      setActionPending(null);
+    }
   };
+
+  const handleTally = async (disputeId) => {
+    setActionPending(disputeId);
+    try {
+      await tallyVotes(disputeId);
+    } finally {
+      setActionPending(null);
+    }
+  };
+
+  const openVoteDialog = (dispute) => {
+    setSelectedDispute(dispute);
+    setVote("");
+    setReasoning("");
+    setShowVoteDialog(true);
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-foreground">Open Disputes</h2>
-        <p className="text-muted-foreground">Review evidence and cast your vote on active disputes</p>
+        <p className="text-muted-foreground">Review evidence and cast your vote on disputes you are assigned to</p>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
         <TabsList>
-          <TabsTrigger value="pending">Pending Vote ({pendingDisputes.length})</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved ({resolvedDisputes.length})</TabsTrigger>
+          <TabsTrigger value="pending">
+            Pending ({pendingDisputes.length})
+          </TabsTrigger>
+          <TabsTrigger value="resolved">
+            Resolved ({resolvedDisputes.length})
+          </TabsTrigger>
         </TabsList>
 
+        {/* ── Pending tab ── */}
         <TabsContent value="pending" className="mt-6">
           {pendingDisputes.length === 0 ? (
             <EmptyState
               icon="vote"
               title="No pending disputes"
-              description="You have no disputes requiring your vote at this time."
+              description="You have no disputes requiring your vote. You will be notified when a dispute is assigned to you."
             />
           ) : (
             <div className="grid gap-4">
               {pendingDisputes.map((dispute) => {
-                const voted = hasVoted(dispute);
+                const voted     = hasVoted(dispute);
+                const tallying  = canTally(dispute);
+                const milestone = getMilestone(dispute);
+                const isPending = actionPending === dispute.id;
+
                 return (
-                  <Card key={dispute.id} className={`transition-all ${voted ? "opacity-60" : "hover:border-primary/50"}`}>
+                  <Card
+                    key={dispute.id}
+                    className={`transition-all ${voted && !tallying ? "opacity-70" : "hover:border-primary/50"}`}
+                  >
                     <CardHeader>
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg">{dispute.reason}</CardTitle>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <CardTitle className="text-lg">
+                              {milestone?.milestoneTitle ?? `Dispute #${dispute.id}`}
+                            </CardTitle>
                             {voted && (
-                              <Badge variant="outline" className="bg-primary/10 text-primary">
-                                <CheckCircle className="mr-1 h-3 w-3"/>Voted
+                              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                                <CheckCircle className="mr-1 h-3 w-3" />Voted
+                              </Badge>
+                            )}
+                            {tallying && (
+                              <Badge variant="outline" className="bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30">
+                                <Gavel className="mr-1 h-3 w-3" />Ready to Tally
                               </Badge>
                             )}
                           </div>
-                          <CardDescription>Milestone #{dispute.milestoneId}</CardDescription>
+                          <CardDescription>
+                            Dispute #{dispute.id} · Milestone #{dispute.milestoneId} · {statusLabel(dispute.status)}
+                          </CardDescription>
                         </div>
-                        <StatusBadge status="active"/>
+                        <StatusBadge status="disputed" />
                       </div>
                     </CardHeader>
+
                     <CardContent>
                       <div className="space-y-4">
                         {/* Parties */}
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-3 sm:grid-cols-2">
                           <div className="rounded-lg border border-border bg-muted/30 p-3">
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                              <User className="h-4 w-4 text-primary"/>Client
+                            <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                              <User className="h-4 w-4 text-primary" /> Client
                             </div>
-                            <p className="mt-1 font-mono text-xs text-muted-foreground">
+                            <p className="font-mono text-xs text-muted-foreground">
                               {dispute.clientAddress
-                                ? `${dispute.clientAddress.slice(0,8)}...${dispute.clientAddress.slice(-6)}`
+                                ? `${dispute.clientAddress.slice(0,10)}…${dispute.clientAddress.slice(-6)}`
                                 : "—"}
                             </p>
                           </div>
                           <div className="rounded-lg border border-border bg-muted/30 p-3">
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                              <User className="h-4 w-4 text-secondary-foreground"/>Freelancer
+                            <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                              <User className="h-4 w-4 text-muted-foreground" /> Freelancer
                             </div>
-                            <p className="mt-1 font-mono text-xs text-muted-foreground">
+                            <p className="font-mono text-xs text-muted-foreground">
                               {dispute.freelancerAddress
-                                ? `${dispute.freelancerAddress.slice(0,8)}...${dispute.freelancerAddress.slice(-6)}`
+                                ? `${dispute.freelancerAddress.slice(0,10)}…${dispute.freelancerAddress.slice(-6)}`
                                 : "—"}
                             </p>
                           </div>
@@ -151,41 +225,76 @@ export function OpenDisputes() {
                               {dispute.votes?.length ?? 0}/{dispute.assignedJurors?.length ?? 0} votes
                             </span>
                           </div>
-                          <Progress value={getVotingProgress(dispute)} className="h-2"/>
+                          <Progress value={getVotingProgress(dispute)} className="h-2" />
                         </div>
 
-                        {/* Meta */}
-                        <div className="flex items-center gap-4 text-sm">
+                        {/* Evidence + deadline */}
+                        <div className="flex flex-wrap items-center gap-4 text-sm">
                           <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <Clock className="h-4 w-4"/>
-                            <span>Time remaining: {getTimeRemaining(dispute.votingDeadline)}</span>
+                            <Clock className="h-4 w-4" />
+                            <span>{getTimeRemaining(dispute.votingDeadline)} remaining</span>
                           </div>
                           {dispute.ipfsCID && (
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
-                              <FileText className="h-4 w-4"/>
-                              <a
-                                href={`https://gateway.pinata.cloud/ipfs/${dispute.ipfsCID}`}
-                                target="_blank" rel="noreferrer"
-                                className="text-primary hover:underline text-xs"
-                              >
-                                View submission
-                              </a>
-                            </div>
+                            <a
+                              href={`https://gateway.pinata.cloud/ipfs/${dispute.ipfsCID}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1.5 text-primary hover:underline text-sm"
+                            >
+                              <FileText className="h-4 w-4" />
+                              Submission on IPFS
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                          {milestone?.acceptanceCriteria?.srsCID && (
+                            <a
+                              href={`https://gateway.pinata.cloud/ipfs/${milestone.acceptanceCriteria.srsCID}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex items-center gap-1.5 text-primary hover:underline text-sm"
+                            >
+                              <FileText className="h-4 w-4" />
+                              SRS Spec
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
                           )}
                         </div>
 
                         {/* Actions */}
-                        <div className="flex gap-2 pt-2">
-                          <Button variant="outline" size="sm" onClick={() => setSelectedDispute(dispute)}>
-                            <Eye className="mr-2 h-4 w-4"/>Review Evidence
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {/* Evidence review */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setSelectedDispute(dispute); }}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Review Evidence
                           </Button>
-                          {!voted && (
+
+                          {/* Cast vote (only if not yet voted) */}
+                          {!voted && dispute.status !== "resolved" && (
                             <Button
                               size="sm"
-                              disabled={isLoading}
-                              onClick={() => { setSelectedDispute(dispute); setShowVoteDialog(true); }}
+                              disabled={isPending || isLoading}
+                              onClick={() => openVoteDialog(dispute)}
                             >
-                              <Scale className="mr-2 h-4 w-4"/>Cast Vote
+                              <Scale className="mr-2 h-4 w-4" />
+                              Cast Vote
+                            </Button>
+                          )}
+
+                          {/* Tally votes — appears when all jurors have voted */}
+                          {tallying && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={isPending || isLoading}
+                              onClick={() => handleTally(dispute.id)}
+                            >
+                              {isPending
+                                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Tallying…</>
+                                : <><Gavel className="mr-2 h-4 w-4" />Tally Votes & Close</>}
                             </Button>
                           )}
                         </div>
@@ -198,136 +307,253 @@ export function OpenDisputes() {
           )}
         </TabsContent>
 
+        {/* ── Resolved tab ── */}
         <TabsContent value="resolved" className="mt-6">
           {resolvedDisputes.length === 0 ? (
-            <EmptyState icon="contract" title="No resolved disputes" description="Resolved disputes will appear here."/>
+            <EmptyState
+              icon="contract"
+              title="No resolved disputes"
+              description="Resolved disputes will appear here."
+            />
           ) : (
             <div className="grid gap-4">
-              {resolvedDisputes.map(dispute => (
-                <Card key={dispute.id}>
-                  <CardHeader>
-                    <CardTitle className="text-lg">{dispute.reason}</CardTitle>
-                    <CardDescription>
-                      Resolved — outcome: {dispute.releaseToFreelancer ? "Freelancer won" : "Client won"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <StatusBadge status="resolved"/>
-                  </CardContent>
-                </Card>
-              ))}
+              {resolvedDisputes.map((dispute) => {
+                const milestone = getMilestone(dispute);
+                return (
+                  <Card key={dispute.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-lg">
+                            {milestone?.milestoneTitle ?? `Dispute #${dispute.id}`}
+                          </CardTitle>
+                          <CardDescription>
+                            Dispute #{dispute.id} · Milestone #{dispute.milestoneId}
+                          </CardDescription>
+                        </div>
+                        <StatusBadge status="resolved" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className={`rounded-lg border p-3 flex items-center gap-2 text-sm font-medium
+                        ${dispute.releaseToFreelancer
+                          ? "border-primary/30 bg-primary/5 text-primary"
+                          : "border-destructive/30 bg-destructive/5 text-destructive"}`}
+                      >
+                        {dispute.releaseToFreelancer
+                          ? <><CheckCircle className="h-4 w-4" /> Freelancer won — payment released</>
+                          : <><XCircle className="h-4 w-4" /> Client won — funds returned</>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* Evidence Review Dialog */}
-      <Dialog open={!!selectedDispute && !showVoteDialog} onOpenChange={() => setSelectedDispute(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+      {/* ── Evidence Review Dialog ── */}
+      <Dialog
+        open={!!selectedDispute && !showVoteDialog}
+        onOpenChange={() => setSelectedDispute(null)}
+      >
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Dispute Evidence</DialogTitle>
-            <DialogDescription>{selectedDispute?.reason}</DialogDescription>
+            <DialogTitle>Evidence Review</DialogTitle>
+            <DialogDescription>
+              Dispute #{selectedDispute?.id} · Milestone #{selectedDispute?.milestoneId}
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6">
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <h4 className="font-medium">Dispute Summary</h4>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Milestone #{selectedDispute?.milestoneId} · Staked: {selectedDispute?.stakedAmount ?? 0} ETH
-              </p>
+
+          <div className="space-y-5">
+            {/* Parties summary */}
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground mb-1">Client</p>
+                <p className="font-mono text-xs text-foreground break-all">
+                  {selectedDispute?.clientAddress ?? "—"}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <p className="text-xs text-muted-foreground mb-1">Freelancer</p>
+                <p className="font-mono text-xs text-foreground break-all">
+                  {selectedDispute?.freelancerAddress ?? "—"}
+                </p>
+              </div>
             </div>
 
-            {/* IPFS submission link */}
-            {selectedDispute?.ipfsCID && (
+            {/* Staked amount */}
+            <div className="rounded-lg border border-border bg-muted/30 p-4 flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">ETH locked in escrow</span>
+              <span className="font-bold text-foreground">
+                {selectedDispute?.stakedAmount?.toFixed(4) ?? "—"} ETH
+              </span>
+            </div>
+
+            {/* Deliverable on IPFS */}
+            {selectedDispute?.ipfsCID ? (
               <div className="rounded-lg border border-border p-4">
-                <h4 className="font-medium mb-2">Submission on IPFS</h4>
+                <p className="text-sm font-medium mb-2">Freelancer Deliverable (IPFS)</p>
                 <a
                   href={`https://gateway.pinata.cloud/ipfs/${selectedDispute.ipfsCID}`}
-                  target="_blank" rel="noreferrer"
-                  className="text-sm text-primary underline break-all"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 text-sm text-primary hover:underline break-all"
                 >
+                  <ExternalLink className="h-4 w-4 shrink-0" />
                   {selectedDispute.ipfsCID}
                 </a>
               </div>
-            )}
-
-            {(selectedDispute?.evidence?.length ?? 0) === 0 && (
+            ) : (
               <p className="text-sm text-muted-foreground">
-                The IPFS submission above is the primary evidence. No additional evidence has been uploaded.
+                No IPFS submission recorded for this dispute.
               </p>
             )}
+
+            {/* SRS / spec */}
+            {(() => {
+              const milestone = getMilestone(selectedDispute ?? {});
+              return milestone?.acceptanceCriteria?.srsCID ? (
+                <div className="rounded-lg border border-border p-4">
+                  <p className="text-sm font-medium mb-2">Client Specification (SRS)</p>
+                  <a
+                    href={`https://gateway.pinata.cloud/ipfs/${milestone.acceptanceCriteria.srsCID}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline break-all"
+                  >
+                    <ExternalLink className="h-4 w-4 shrink-0" />
+                    {milestone.acceptanceCriteria.srsCID}
+                  </a>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Acceptance requirements */}
+            {(() => {
+              const milestone = getMilestone(selectedDispute ?? {});
+              const reqs = milestone?.acceptanceCriteria?.requirements ?? [];
+              return reqs.length > 0 ? (
+                <div className="rounded-lg border border-border p-4">
+                  <p className="text-sm font-medium mb-3">Acceptance Requirements</p>
+                  <ul className="space-y-2">
+                    {reqs.map((req, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <CheckCircle className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+                        {req}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null;
+            })()}
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedDispute(null)}>Close</Button>
-            <Button onClick={() => setShowVoteDialog(true)}>
-              <Scale className="mr-2 h-4 w-4"/>Proceed to Vote
-            </Button>
+            {selectedDispute && !hasVoted(selectedDispute) && selectedDispute.status !== "resolved" && (
+              <Button onClick={() => openVoteDialog(selectedDispute)}>
+                <Scale className="mr-2 h-4 w-4" />
+                Proceed to Vote
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Vote Dialog */}
+      {/* ── Vote Dialog ── */}
       <Dialog open={showVoteDialog} onOpenChange={setShowVoteDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Cast Your Vote</DialogTitle>
-            <DialogDescription>Your vote is final and will be recorded on-chain</DialogDescription>
+            <DialogDescription>
+              Your vote is final and recorded on-chain. You cannot change it.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6">
+
+          <div className="space-y-5">
+            {/* Warning */}
             <div className="rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/10 p-4">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 text-[#F59E0B]"/>
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-[#F59E0B] shrink-0" />
                 <div className="text-sm text-[#F59E0B]">
-                  <p className="font-medium">Important Notice</p>
-                  <p className="mt-1">
-                    Voting against the majority results in your stake being slashed. This cannot be undone.
-                  </p>
+                  <p className="font-medium">Voting against the majority slashes your stake.</p>
+                  <p className="mt-1 text-xs">Review the IPFS submission and SRS spec before deciding.</p>
                 </div>
               </div>
             </div>
 
+            {/* Decision */}
             <div>
-              <Label className="text-sm font-medium">Your Decision</Label>
-              <RadioGroup value={vote || ""} onValueChange={v => setVote(v)} className="mt-3 grid grid-cols-2 gap-4">
+              <Label className="text-sm font-medium mb-3 block">Your Decision</Label>
+              <RadioGroup
+                value={vote}
+                onValueChange={setVote}
+                className="grid grid-cols-2 gap-3"
+              >
+                {/* Client wins */}
                 <div>
-                  <RadioGroupItem value="client" id="vote-client" className="peer sr-only"/>
-                  <Label htmlFor="vote-client" className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-border bg-background p-4 hover:bg-muted peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
-                    <ThumbsUp className="mb-2 h-6 w-6 text-primary"/>
-                    <span className="font-medium">Client</span>
-                    <span className="text-xs text-muted-foreground">Rule in favour of client</span>
+                  <RadioGroupItem value="client" id="vote-client" className="peer sr-only" />
+                  <Label
+                    htmlFor="vote-client"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-border bg-background p-4 hover:bg-muted
+                      peer-data-[state=checked]:border-destructive peer-data-[state=checked]:bg-destructive/5 transition-colors"
+                  >
+                    <XCircle className="mb-2 h-7 w-7 text-destructive" />
+                    <span className="font-semibold">Client Wins</span>
+                    <span className="text-xs text-muted-foreground text-center mt-1">
+                      Work did not meet requirements — refund client
+                    </span>
                   </Label>
                 </div>
+
+                {/* Freelancer wins */}
                 <div>
-                  <RadioGroupItem value="freelancer" id="vote-freelancer" className="peer sr-only"/>
-                  <Label htmlFor="vote-freelancer" className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-border bg-background p-4 hover:bg-muted peer-data-[state=checked]:border-secondary peer-data-[state=checked]:bg-secondary/5">
-                    <ThumbsDown className="mb-2 h-6 w-6 text-secondary-foreground"/>
-                    <span className="font-medium">Freelancer</span>
-                    <span className="text-xs text-muted-foreground">Rule in favour of freelancer</span>
+                  <RadioGroupItem value="freelancer" id="vote-freelancer" className="peer sr-only" />
+                  <Label
+                    htmlFor="vote-freelancer"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-border bg-background p-4 hover:bg-muted
+                      peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 transition-colors"
+                  >
+                    <CheckCircle className="mb-2 h-7 w-7 text-primary" />
+                    <span className="font-semibold">Freelancer Wins</span>
+                    <span className="text-xs text-muted-foreground text-center mt-1">
+                      Work meets requirements — release payment
+                    </span>
                   </Label>
                 </div>
               </RadioGroup>
             </div>
 
-            {/* Reasoning — passed to voteOnDispute → signed and stored locally */}
+            {/* Reasoning */}
             <div>
-              <Label htmlFor="reasoning">Reasoning (Optional)</Label>
+              <Label htmlFor="reasoning">Reasoning
+                <span className="ml-1 text-xs text-muted-foreground font-normal">(optional)</span>
+              </Label>
               <Textarea
                 id="reasoning"
-                placeholder="Explain your decision based on the evidence..."
+                placeholder="Explain your decision based on the evidence…"
                 value={reasoning}
-                onChange={e => setReasoning(e.target.value)}
+                onChange={(e) => setReasoning(e.target.value)}
                 rows={3}
                 className="mt-2"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Your reasoning will be signed with your wallet and stored locally for reference.
+                Signed with your wallet and stored locally for reference.
               </p>
             </div>
           </div>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowVoteDialog(false)}>Cancel</Button>
-            <Button onClick={handleVote} disabled={!vote || isLoading}>
-              <CheckCircle className="mr-2 h-4 w-4"/>
-              {isLoading ? "Submitting…" : "Submit Vote"}
+            <Button
+              onClick={handleVote}
+              disabled={!vote || actionPending !== null || isLoading}
+            >
+              {actionPending !== null
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting…</>
+                : <><CheckCircle className="mr-2 h-4 w-4" />Submit Vote</>}
             </Button>
           </DialogFooter>
         </DialogContent>

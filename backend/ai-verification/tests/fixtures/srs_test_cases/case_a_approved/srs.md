@@ -15,7 +15,6 @@ final order total including item discounts, tier-based discounts, coupon
 discounts, and tax. This module is called on every checkout — correctness
 and edge-case handling are critical.
 
-
 ---
 
 ## 2. Functions Required
@@ -23,7 +22,7 @@ and edge-case handling are critical.
 ### Function: `calculate_item_total(items: list[dict]) -> float`
 
 **Purpose:**
-Sum the total cost of all items in the cart before any discounts..
+Sum the total cost of all items in the cart before any discounts.
 
 **Parameters:**
 | Name | Type | Description |

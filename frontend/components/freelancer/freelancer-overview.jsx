@@ -11,6 +11,15 @@ import {
   Tooltip, ResponsiveContainer,
 } from 'recharts';
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function calculateTrend(currentValue, previousValue, label = 'vs previous 30d') {
+  if (currentValue === 0 && previousValue === 0) return null;
+  if (previousValue === 0) return { value: 100, positive: currentValue >= previousValue, label };
+  const delta = ((currentValue - previousValue) / previousValue) * 100;
+  return { value: Math.round(Math.abs(delta)), positive: delta >= 0, label };
+}
+
 export function FreelancerOverview() {
   const { contracts }  = useContracts();
   const { walletAddress } = useWallet();
@@ -52,6 +61,33 @@ export function FreelancerOverview() {
       .slice(-6); // show last 6 months
   }, [contracts, walletAddress]);
 
+  const totalEarnedTrend = useMemo(() => {
+    if (!walletAddress) return null;
+    const now = Date.now();
+    const currentStart = now - THIRTY_DAYS_MS;
+    const previousStart = now - (THIRTY_DAYS_MS * 2);
+    const addr = walletAddress.toLowerCase();
+
+    let currentWindow = 0;
+    let previousWindow = 0;
+
+    contracts.forEach((contract) => {
+      if (contract.freelancerAddress?.toLowerCase() !== addr) return;
+      if (contract.status !== 'released') return;
+
+      const settledAt = new Date(contract.resolvedAt || contract.deadline || contract.createdAt).getTime();
+      if (!Number.isFinite(settledAt)) return;
+
+      if (settledAt >= currentStart) {
+        currentWindow += contract.amount ?? 0;
+      } else if (settledAt >= previousStart && settledAt < currentStart) {
+        previousWindow += contract.amount ?? 0;
+      }
+    });
+
+    return calculateTrend(currentWindow, previousWindow);
+  }, [contracts, walletAddress]);
+
   const truncateAddress = (address) =>
     address ? `${address.slice(0, 6)}...${address.slice(-4)}` : '—';
 
@@ -66,7 +102,7 @@ export function FreelancerOverview() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard title="Active Milestones"  value={userStats.activeMilestones || 0}                        icon={FileCheck} />
         <StatsCard title="Pending Payments"   value={(userStats.pendingPayments || 0).toFixed(4)} suffix="ETH" icon={Clock} />
-        <StatsCard title="Total Earned"       value={(userStats.totalEarned || 0).toFixed(4)}     suffix="ETH" icon={Wallet} trend={{ value: 0, positive: true }} />
+        <StatsCard title="Total Earned"       value={(userStats.totalEarned || 0).toFixed(4)}     suffix="ETH" icon={Wallet} trend={totalEarnedTrend} />
         <StatsCard title="Success Rate"       value={userStats.successRate || 0}                  suffix="%"   icon={TrendingUp} />
       </div>
 

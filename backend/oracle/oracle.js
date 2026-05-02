@@ -14,7 +14,7 @@
 
 'use strict';
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
 const { ethers }  = require('ethers');
 const http        = require('http');
@@ -297,7 +297,7 @@ async function pollVerificationResult(milestoneId, jobId) {
     try {
       const result = await httpGet(`${CONFIG.AI_VERIFICATION_URL}/result/${jobId}`);
 
-      if (result.status === 'COMPLETE') {
+      if (result.status === 'COMPLETED') {
         logger.ok(`[${milestoneId}] Job ${jobId} complete after ${attempt} poll(s)`);
         return result;
       }
@@ -322,7 +322,7 @@ async function pollVerificationResult(milestoneId, jobId) {
  */
 function buildMockResult(milestoneId, ipfsCID) {
   return {
-    status:    'COMPLETE',
+    status:    'COMPLETED',
     score:     0.82,
     verdict:   'APPROVED',
     breakdown: {

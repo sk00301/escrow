@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/navbar';
 import { WalletModal } from '@/components/wallet-modal';
 import { useWallet } from '@/contexts/wallet-context';
-import { PLATFORM_STATS } from '@/lib/mock-data';
+import { useLivePlatformStats } from '@/hooks/use-live-platform-stats';
 import { Shield, Brain, Users, FileCheck, Wallet, Lock, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 export default function LandingPage() {
     const [walletModalOpen, setWalletModalOpen] = useState(false);
-    const { isConnected } = useWallet();
+    const { isConnected, provider, isCorrectNetwork } = useWallet();
+    const { stats: platformStats, loading: statsLoading } = useLivePlatformStats({
+        provider: isCorrectNetwork ? provider : null,
+    });
+    const currentYear = new Date().getFullYear();
     return (<div className="min-h-screen bg-background">
       <Navbar />
       
@@ -110,10 +114,26 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-            { label: 'Total Contracts', value: PLATFORM_STATS.totalContracts.toLocaleString(), suffix: '' },
-            { label: 'Total Paid Out', value: PLATFORM_STATS.totalPaidOut.toFixed(1), suffix: ' ETH' },
-            { label: 'Disputes Resolved', value: PLATFORM_STATS.disputesResolved.toLocaleString(), suffix: '' },
-            { label: 'Active Jurors', value: PLATFORM_STATS.activeJurors.toLocaleString(), suffix: '' }
+            {
+                label: 'Total Contracts',
+                value: statsLoading ? '...' : platformStats.totalContracts.toLocaleString(),
+                suffix: '',
+            },
+            {
+                label: 'Total Paid Out',
+                value: statsLoading ? '...' : platformStats.totalPaidOut.toFixed(4),
+                suffix: ' ETH',
+            },
+            {
+                label: 'Disputes Resolved',
+                value: statsLoading ? '...' : platformStats.disputesResolved.toLocaleString(),
+                suffix: '',
+            },
+            {
+                label: 'Active Jurors',
+                value: statsLoading ? '...' : platformStats.activeJurors.toLocaleString(),
+                suffix: '',
+            }
         ].map((stat) => (<div key={stat.label} className="text-center">
                 <p className="text-3xl sm:text-4xl font-bold text-foreground mb-1">
                   {stat.value}
@@ -188,7 +208,7 @@ export default function LandingPage() {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Join thousands of freelancers and clients using EscrowChain for secure, 
+            Join freelancers and clients using EscrowChain for secure,
             transparent payments.
           </p>
           <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 cyan-glow gap-2 px-8 h-14 text-lg" onClick={() => setWalletModalOpen(true)}>
@@ -223,7 +243,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              2026 EscrowChain. All rights reserved.
+              {currentYear} EscrowChain. All rights reserved.
             </p>
           </div>
         </div>

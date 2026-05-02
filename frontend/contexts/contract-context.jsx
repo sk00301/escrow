@@ -511,7 +511,10 @@ export function ContractProvider({ children }) {
     return { success: true, hash: receipt.hash };
   }, [jury, signer, sendTx]);
 
-  const voteOnDispute = useCallback((disputeId, vote) => castVote(disputeId, vote), [castVote]);
+  const voteOnDispute = useCallback(
+    (disputeId, vote, reasoning = '') => castVote(disputeId, vote, reasoning),
+    [castVote]
+  );
 
   const tallyVotes = useCallback(async (disputeId) => {
     if (!jury) throw new Error('Contracts not initialised.');
@@ -644,6 +647,7 @@ export function ContractProvider({ children }) {
       getContract, getAllContracts, getTimeoutRefund,
       castVote, voteOnDispute, stakeToBeJuror, unstake, tallyVotes,
       getJurorStats,
+      uploadToIPFS,
       contractError, setContractError, lastTx,
       escrow, dispute, evidence, jury,
       etherscanTxLink, etherscanAddressLink,
