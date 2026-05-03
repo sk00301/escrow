@@ -29,6 +29,22 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 const JOB_BOARD_KEY = 'escrow_job_board';
 const JobBoardContext = createContext(undefined);
 
+// ── Milestone-keyed verification store ────────────────────────────────────────
+// Stored separately from the board so any wallet / tab can read results
+// without needing to know the board job UUID.
+// key: `mv_${milestoneId}`
+function saveVerifyRecord(milestoneId, record) {
+  if (!milestoneId) return;
+  try { localStorage.setItem(`mv_${milestoneId}`, JSON.stringify(record)); } catch {}
+}
+export function loadVerifyRecord(milestoneId) {
+  if (!milestoneId) return null;
+  try {
+    const r = localStorage.getItem(`mv_${milestoneId}`);
+    return r ? JSON.parse(r) : null;
+  } catch { return null; }
+}
+
 function loadBoard() {
   if (typeof window === 'undefined') return {};
   try { const r = localStorage.getItem(JOB_BOARD_KEY); return r ? JSON.parse(r) : {}; }
@@ -40,7 +56,19 @@ function persistBoard(b) {
 
 export function JobBoardProvider({ children }) {
   const [jobs, setJobs] = useState({});
-  useEffect(() => { setJobs(loadBoard()); }, []);
+  useEffect(() => {
+    // Initial load
+    setJobs(loadBoard());
+
+    // Cross-tab sync: when another tab updates the board, pick it up immediately
+    const onStorage = (e) => {
+      if (e.key === JOB_BOARD_KEY && e.newValue) {
+        try { setJobs(JSON.parse(e.newValue)); } catch {}
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const _update = useCallback((jobId, patch) => {
     setJobs(prev => {
@@ -137,6 +165,8 @@ export function JobBoardProvider({ children }) {
         },
       }};
       persistBoard(next);
+      // Also persist under milestoneId key for cross-wallet / cross-tab access
+      if (job.milestoneId) saveVerifyRecord(job.milestoneId, result);
       return next;
     });
   }, []);

@@ -298,7 +298,7 @@ export default function VerificationPage({ params }) {
               </Button>
             </div>
           </div>
-        ) : !jobId ? (
+        ) : !aiJobId && !localRecord ? (
           /* Work submitted but no AI verification yet, or awaiting submission */
           <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6 space-y-4">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">

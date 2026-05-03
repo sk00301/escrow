@@ -192,7 +192,7 @@ export function ActiveContracts() {
       }, { intervalMs: 5000, maxAttempts: 150 });
 
       const parsed = parseVerificationResult(finalRaw);
-      recordVerification(boardJob.id, milestoneIdx, { ...parsed, aiJobId });
+      recordVerification(boardJob.id, milestoneIdx, { ...parsed, aiJobId, submissionIpfsCID: ipfsCID });
       setLiveResults(p => ({ ...p, [key]: parsed }));
     } catch (err) {
       setLiveResults(p => ({ ...p, [key]: { status: 'FAILED', errorMsg: err.message, errorCode: 'CLIENT_ERROR' } }));
