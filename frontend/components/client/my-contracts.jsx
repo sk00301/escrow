@@ -13,8 +13,8 @@ import {
 } from '@/lib/ai-verification';
 import {
   ChevronDown, ChevronUp, Code, FileText, Palette, Calendar,
-  Eye, CheckCircle, AlertTriangle, Wallet, Layers,
-  ExternalLink, Brain, Clock, AlertCircle, RefreshCw, Loader2,
+  Eye, CheckCircle, AlertTriangle, Loader2, Wallet, Layers,
+  ExternalLink, Brain, Clock, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn }     from '@/lib/utils';
@@ -29,30 +29,40 @@ const BOARD_BADGE = {
   cancelled: { label: 'Cancelled',                   cls: 'bg-muted text-muted-foreground border-border' },
 };
 
-function VerifBadge({ v }) {
-  if (!v) return null;
-  if (v.status === 'COMPLETED') {
+// ── Verification status pill ──────────────────────────────────────────────────
+function VerifPill({ v, isRunning }) {
+  if (isRunning || v?.status === 'PENDING' || v?.status === 'RUNNING')
+    return <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"><Loader2 className="h-2.5 w-2.5 animate-spin" />{v?.status === 'PENDING' ? 'Queued…' : 'Verifying…'}</span>;
+  if (v?.status === 'FAILED')
+    return <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20"><AlertTriangle className="h-2.5 w-2.5" />Verify failed</span>;
+  if (v?.status === 'COMPLETED')
     return v.isPassed
-      ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20"><CheckCircle className="h-2.5 w-2.5" />AI Approved · {Math.round((v.score ?? 0) * 100)}%</span>
-      : <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20"><AlertCircle className="h-2.5 w-2.5" />{v.verdict} · {Math.round((v.score ?? 0) * 100)}%</span>;
-  }
-  if (v.status === 'FAILED') return <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20"><AlertTriangle className="h-2.5 w-2.5" />Verify failed</span>;
-  return <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"><Loader2 className="h-2.5 w-2.5 animate-spin" />Verifying…</span>;
+      ? <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20"><CheckCircle className="h-2.5 w-2.5" />AI Approved · {Math.round((v.score ?? 0) * 100)}%</span>
+      : <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20"><AlertCircle className="h-2.5 w-2.5" />{v.verdict} · {Math.round((v.score ?? 0) * 100)}%</span>;
+  return null;
 }
 
 export function MyContracts() {
   const { contracts, releasePayment, raiseDispute, disputes, isLoading, createMilestone } = useContracts();
   const { walletAddress } = useWallet();
-  const { clientJobs, markFunded, cancelJob, releaseMilestonePayment, recordVerification } = useJobBoard();
+  const {
+    clientJobs, markFunded, cancelJob, releaseMilestonePayment, recordVerification,
+  } = useJobBoard();
   const { toast } = useToast();
 
   const [filter, setFilter]           = useState('all');
-  // Per-milestone transient verification state (keyed by "jobId_milestoneIdx")
-  const [liveVerify, setLiveVerify]   = useState({});
-  const [liveResults, setLiveResults] = useState({});
+  const [expandedId, setExpandedId]   = useState(null);
+  const [actionPending, setActionPending] = useState(null);
+  const [fundingJob, setFundingJob]   = useState(null);
+  const [showFundModal, setShowFundModal] = useState(false);
 
+  // Per-milestone transient verification state
+  const [liveVerify, setLiveVerify]   = useState({});  // `${jobId}_${idx}` → bool
+  const [liveResults, setLiveResults] = useState({});  // `${jobId}_${idx}` → parsed
+
+  // ── Run AI verification ───────────────────────────────────────────────────
   const runVerification = useCallback(async (boardJob, milestoneIdx, ipfsCID) => {
-    if (!ipfsCID || !boardJob) return;
+    if (!ipfsCID) return;
     const key = `${boardJob.id}_${milestoneIdx}`;
     setLiveVerify(p => ({ ...p, [key]: true }));
     setLiveResults(p => ({ ...p, [key]: { status: 'PENDING' } }));
@@ -61,17 +71,22 @@ export function MyContracts() {
       const terms = meta?.paymentTerms ?? [];
       const term  = terms[milestoneIdx] ?? {};
       const title = `${boardJob.title} — ${term.name ?? `Milestone ${milestoneIdx + 1}`}`;
+
       const { jobId: aiJobId } = await submitVerificationJob({
         milestoneId: `${boardJob.milestoneId}_${milestoneIdx}`,
-        ipfsCID, acceptanceCriteria: meta, jobTitle: title,
+        ipfsCID,
+        acceptanceCriteria: meta,
+        jobTitle: title,
         deliverableType: boardJob.deliverableType ?? 'document',
         acceptanceThreshold: (meta?.testPassRate ?? 75) / 100,
       });
-      const final = await waitForVerification(aiJobId, raw => {
+
+      const finalRaw = await waitForVerification(aiJobId, raw => {
         const parsed = parseVerificationResult(raw);
         setLiveResults(p => ({ ...p, [key]: parsed }));
       }, { intervalMs: 5000, maxAttempts: 150 });
-      const parsed = parseVerificationResult(final);
+
+      const parsed = parseVerificationResult(finalRaw);
       recordVerification(boardJob.id, milestoneIdx, { ...parsed, aiJobId });
       setLiveResults(p => ({ ...p, [key]: parsed }));
     } catch (err) {
@@ -81,27 +96,17 @@ export function MyContracts() {
       setLiveVerify(p => ({ ...p, [key]: false }));
     }
   }, [recordVerification, toast]);
-  const [expandedId, setExpandedId]   = useState(null);
-  const [actionPending, setActionPending] = useState(null);
-  const [fundingJob, setFundingJob]   = useState(null);
-  const [showFundModal, setShowFundModal] = useState(false);
 
-  // ── Build ONE card per job — strict deduplication ─────────────────────────
+  // ── Build deduplicated item list ──────────────────────────────────────────
   const boardJobs = clientJobs(walletAddress);
-
-  // Map milestoneId → board job for funded jobs
   const boardByMId = {};
   boardJobs.forEach(j => { if (j.milestoneId) boardByMId[j.milestoneId] = j; });
   const coveredMIds = new Set(Object.keys(boardByMId));
 
   const allItems = [
-    // 1. Board jobs not yet funded (open / accepted / cancelled)
     ...boardJobs
       .filter(j => ['open', 'accepted', 'cancelled'].includes(j.status))
       .map(j => ({ ...j, _src: 'board' })),
-
-    // 2. Funded board jobs — show the on-chain data merged with board metadata
-    //    Skip if on-chain not loaded yet (show board_funded fallback)
     ...boardJobs
       .filter(j => j.status === 'funded' && j.milestoneId)
       .map(j => {
@@ -109,8 +114,6 @@ export function MyContracts() {
         if (chain) return { ...chain, _boardJob: j, _src: 'chain' };
         return { ...j, milestoneTitle: j.title, _src: 'board_funded' };
       }),
-
-    // 3. On-chain contracts NOT linked to any board job AND not placeholder
     ...contracts.filter(c =>
       c.clientAddress?.toLowerCase() === walletAddress?.toLowerCase() &&
       !coveredMIds.has(c.id) &&
@@ -133,10 +136,7 @@ export function MyContracts() {
     { value: 'completed', label: 'Completed' },
   ].filter(f => f.value === 'all' || filterCounts[f.value]);
 
-  const filteredItems = filter === 'all'
-    ? allItems
-    : allItems.filter(i => i.status === filter);
-
+  const filteredItems = filter === 'all' ? allItems : allItems.filter(i => i.status === filter);
   const truncate = a => a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '—';
 
   // ── Fund escrow ───────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ export function MyContracts() {
         <p className="text-muted-foreground">One card per job — from posting through payment</p>
       </div>
 
-      {/* Filters */}
+      {/* Filter chips */}
       <div className="flex flex-wrap gap-2">
         {statusFilters.map(s => (
           <Button key={s.value} variant="outline" size="sm"
@@ -201,27 +201,27 @@ export function MyContracts() {
       ) : (
         <div className="space-y-4">
           {filteredItems.map(item => {
-            const id           = item.id;
-            const boardJob     = item._boardJob ?? (item._src === 'board' || item._src === 'board_funded' ? item : null);
-            const isChain      = item._src === 'chain' || item._src === 'chain_legacy';
-            const title        = item.milestoneTitle ?? item.title ?? '—';
-            const status       = item.status;
-            const amount       = item.amount ?? boardJob?.amount;
-            const deadline     = item.deadline;
-            const freelancer   = item.freelancerAddress ?? boardJob?.freelancerAddress;
-            const DeliverIcon  = deliverableIcons[item.deliverableType ?? boardJob?.deliverableType] ?? FileText;
-            const isExpanded   = expandedId === id;
-            const meta         = item.acceptanceCriteria ?? boardJob?.acceptanceCriteria;
-            const payTerms     = meta?.paymentTerms ?? [];
-            const mVerifs      = boardJob?.milestoneVerifications ?? {};
-            const mSubs        = boardJob?.milestoneSubmissions ?? {};
-            const released     = boardJob?.releasedMilestones ?? [];
-            const currentIdx   = boardJob?.currentMilestoneIdx ?? 0;
-            const ipfsCID      = item.ipfsCID;
+            const id          = item.id;
+            const boardJob    = item._boardJob ?? (item._src === 'board' || item._src === 'board_funded' ? item : null);
+            const isChain     = item._src === 'chain' || item._src === 'chain_legacy';
+            const title       = item.milestoneTitle ?? item.title ?? '—';
+            const status      = item.status;
+            const amount      = Number(item.amount ?? boardJob?.amount ?? 0);
+            const deadline    = item.deadline;
+            const freelancer  = item.freelancerAddress ?? boardJob?.freelancerAddress;
+            const DeliverIcon = deliverableIcons[item.deliverableType ?? boardJob?.deliverableType] ?? FileText;
+            const isExpanded  = expandedId === id;
+            const meta        = item.acceptanceCriteria ?? boardJob?.acceptanceCriteria;
+            const payTerms    = meta?.paymentTerms ?? [];
+            const mVerifs     = boardJob?.milestoneVerifications ?? {};
+            const mSubs       = boardJob?.milestoneSubmissions ?? {};
+            const released    = boardJob?.releasedMilestones ?? [];
+            const currentIdx  = boardJob?.currentMilestoneIdx ?? 0;
 
             return (
               <div key={id} className="glass-card rounded-xl border border-border overflow-hidden">
-                {/* Header */}
+
+                {/* Card header */}
                 <div className="p-6 cursor-pointer hover:bg-muted/20 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : id)}>
                   <div className="flex items-center justify-between gap-4">
@@ -240,7 +240,7 @@ export function MyContracts() {
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       <div className="text-right hidden sm:block">
-                        <p className="font-semibold text-foreground">{Number(amount ?? 0).toFixed(4)} ETH</p>
+                        <p className="font-semibold text-foreground">{amount.toFixed(4)} ETH</p>
                         <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
                           <Calendar className="h-3 w-3" />
                           {deadline ? format(new Date(deadline), 'dd MMM yyyy') : '—'}
@@ -256,33 +256,33 @@ export function MyContracts() {
                   </div>
                 </div>
 
-                {/* Expanded */}
+                {/* Expanded details */}
                 {isExpanded && (
                   <div className="px-6 pb-6 border-t border-border pt-6 space-y-6">
                     <div className="grid md:grid-cols-2 gap-6">
+
+                      {/* Left col — info */}
                       <div className="space-y-4">
                         {item.description && (
-                          <div><p className="text-xs text-muted-foreground mb-1">Description</p>
-                            <p className="text-sm text-foreground">{item.description}</p></div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Description</p>
+                            <p className="text-sm text-foreground">{item.description}</p>
+                          </div>
                         )}
-                        <div><p className="text-xs text-muted-foreground mb-1">Freelancer</p>
-                          <p className="text-sm font-mono text-foreground break-all">{freelancer ?? 'Not yet assigned'}</p></div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">Freelancer</p>
+                          <p className="text-sm font-mono text-foreground break-all">{freelancer ?? 'Not yet assigned'}</p>
+                        </div>
                         {(boardJob?.postedAt ?? item.createdAt) && (
-                          <div><p className="text-xs text-muted-foreground mb-1">Posted</p>
-                            <p className="text-sm">{format(new Date(boardJob?.postedAt ?? item.createdAt), 'dd MMM yyyy HH:mm')}</p></div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Posted</p>
+                            <p className="text-sm">{format(new Date(boardJob?.postedAt ?? item.createdAt), 'dd MMM yyyy HH:mm')}</p>
+                          </div>
                         )}
                         {boardJob?.acceptedAt && (
-                          <div><p className="text-xs text-muted-foreground mb-1">Accepted</p>
-                            <p className="text-sm">{format(new Date(boardJob.acceptedAt), 'dd MMM yyyy HH:mm')}</p></div>
-                        )}
-                        {ipfsCID && (
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">Submission (IPFS)</p>
-                            <a href={`https://gateway.pinata.cloud/ipfs/${ipfsCID}`}
-                              target="_blank" rel="noopener noreferrer"
-                              className="text-xs text-primary font-mono hover:underline flex items-center gap-1 break-all">
-                              {ipfsCID.slice(0, 24)}… <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                            </a>
+                            <p className="text-xs text-muted-foreground mb-1">Accepted</p>
+                            <p className="text-sm">{format(new Date(boardJob.acceptedAt), 'dd MMM yyyy HH:mm')}</p>
                           </div>
                         )}
                         {meta?.srsCID && (
@@ -297,87 +297,97 @@ export function MyContracts() {
                         )}
                       </div>
 
+                      {/* Right col — payment milestones */}
                       <div className="space-y-4">
-                        {/* Payment milestones with per-milestone verification + submission */}
                         {payTerms.length > 0 && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                               <Layers className="h-3 w-3" /> Payment Schedule
                             </p>
-                            <div className="space-y-2">
-                              {payTerms.map((ms, i) => {
-                                const verif     = mVerifs[i];
-                                const sub       = mSubs[i];
-                                const isReleased = released.includes(i);
-                                const isActive   = i === currentIdx && isChain;
-                                const isFinal    = i === payTerms.length - 1;
+                            <div className="space-y-3">
+                              {payTerms.map((ms, idx) => {
+                                const key        = `${boardJob?.id ?? id}_${idx}`;
+                                const sub        = mSubs[idx];
+                                const boardVerif = mVerifs[idx];
+                                const liveVerif  = liveResults[key];
+                                const verif      = liveVerif ?? boardVerif;
+                                const isRunning  = !!liveVerify[key];
+                                const isReleased = released.includes(idx);
+                                const isFinal    = idx === payTerms.length - 1;
+                                const ipfsCID    = sub?.ipfsCID ?? item.ipfsCID ?? null;
+                                const verifyDone = verif?.status === 'COMPLETED';
+                                const isApproved = verifyDone && verif.isPassed;
+
                                 return (
-                                  <div key={i} className={cn(
-                                    'rounded-lg border p-3 space-y-1.5',
-                                    isActive ? 'border-primary/30 bg-primary/5' : 'border-border bg-muted/20'
+                                  <div key={idx} className={cn(
+                                    'rounded-lg border p-3 space-y-2',
+                                    isReleased ? 'border-green-500/20 bg-green-500/5' : 'border-border bg-muted/20'
                                   )}>
+                                    {/* Milestone header */}
                                     <div className="flex items-center justify-between gap-2">
                                       <div className="flex items-center gap-2 min-w-0">
-                                        <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                                        <span className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0">{idx + 1}</span>
                                         <span className="text-xs font-medium text-foreground truncate">{ms.name}</span>
                                       </div>
                                       <div className="flex items-center gap-2 flex-shrink-0">
                                         <span className="text-xs font-bold text-primary">{ms.percentage}%</span>
-                                        {amount && <span className="text-[10px] text-muted-foreground">({(Number(amount) * ms.percentage / 100).toFixed(4)} ETH)</span>}
+                                        {amount > 0 && <span className="text-[10px] text-muted-foreground">({(amount * ms.percentage / 100).toFixed(4)} ETH)</span>}
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      {isReleased
-                                        ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20"><CheckCircle className="h-2.5 w-2.5" />Released</span>
-                                        : sub
-                                          ? (() => {
-                                              const vKey = `${boardJob?.id}_${i}`;
-                                              const liveV = liveResults[vKey];
-                                              const effectiveVerif = liveV ?? verif;
-                                              const isVerifying = liveVerify[vKey];
-                                              const ipfsCID = sub.ipfsCID;
-                                              return (
-                                                <div className="space-y-1.5 w-full">
-                                                  <div className="flex flex-wrap items-center gap-2">
-                                                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">Submitted <a href={`https://gateway.pinata.cloud/ipfs/${ipfsCID}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-0.5">view <ExternalLink className="h-2.5 w-2.5" /></a></span>
-                                                    <VerifBadge v={isVerifying ? {status:'RUNNING'} : effectiveVerif} />
-                                                  </div>
-                                                  <button
-                                                    type="button"
-                                                    disabled={isVerifying}
-                                                    onClick={() => boardJob && runVerification(boardJob, i, ipfsCID)}
-                                                    className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                                                    {isVerifying
-                                                      ? <><Loader2 className="h-2.5 w-2.5 animate-spin"/>Verifying…</>
-                                                      : effectiveVerif?.status === 'COMPLETED'
-                                                        ? <><RefreshCw className="h-2.5 w-2.5"/>Re-verify</>
-                                                        : <><Brain className="h-2.5 w-2.5"/>Run AI Verification</>}
-                                                  </button>
-                                                </div>
-                                              );
-                                            })()
-                                          : <span className="text-[10px] text-muted-foreground">{i < currentIdx ? 'Skipped' : isActive ? 'Active' : 'Pending'}</span>
-                                      }
-                                      {/* Client can raise dispute or release on verified final milestone */}
-                                      {!isReleased && verif?.isPassed && isFinal && isChain && status !== 'released' && (
-                                        <div className="flex gap-1.5 mt-1 w-full">
-                                          <Button size="sm" className="h-7 text-xs flex-1"
-                                            disabled={actionPending === id}
-                                            onClick={() => handleRelease(id)}>
-                                            {actionPending === id
-                                              ? <Loader2 className="h-3 w-3 animate-spin" />
-                                              : <><CheckCircle className="h-3 w-3 mr-1" />Release Final Payment</>}
-                                          </Button>
-                                          {!disputes.some(d => d.milestoneId === id) && (
-                                            <Button variant="outline" size="sm" className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
-                                              disabled={actionPending === id}
-                                              onClick={() => handleDispute(id)}>
-                                              <AlertTriangle className="h-3 w-3 mr-1" />Dispute
-                                            </Button>
-                                          )}
-                                        </div>
+
+                                    {/* Status + IPFS link */}
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      {isReleased && (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/10 text-green-600 border border-green-500/20">
+                                          <CheckCircle className="h-2.5 w-2.5" /> Released
+                                        </span>
                                       )}
+                                      {!isReleased && ipfsCID && (
+                                        <a href={`https://gateway.pinata.cloud/ipfs/${ipfsCID}`}
+                                          target="_blank" rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 text-[10px] text-primary hover:underline">
+                                          <ExternalLink className="h-2.5 w-2.5" /> View Submission
+                                        </a>
+                                      )}
+                                      {!isReleased && <VerifPill v={verif} isRunning={isRunning} />}
                                     </div>
+
+                                    {/* ── AI Verification buttons — shown to CLIENT too ── */}
+                                    {!isReleased && ipfsCID && boardJob && (
+                                      <div className="flex flex-wrap gap-1.5 pt-1">
+                                        <button
+                                          type="button"
+                                          disabled={isRunning}
+                                          onClick={() => runVerification(boardJob, idx, ipfsCID)}
+                                          className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-md border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                          {isRunning
+                                            ? <><Loader2 className="h-3 w-3 animate-spin" />Verifying…</>
+                                            : verifyDone
+                                              ? <><RefreshCw className="h-3 w-3" />Re-verify</>
+                                              : <><Brain className="h-3 w-3" />Run AI Verification</>}
+                                        </button>
+                                      </div>
+                                    )}
+
+                                    {/* Client actions on final milestone */}
+                                    {!isReleased && isApproved && isFinal && isChain && (
+                                      <div className="flex gap-1.5 pt-1">
+                                        <Button size="sm" className="h-7 text-xs flex-1"
+                                          disabled={actionPending === item.id}
+                                          onClick={() => handleRelease(item.id)}>
+                                          {actionPending === item.id
+                                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                                            : <><CheckCircle className="h-3 w-3 mr-1" />Release Final Payment</>}
+                                        </Button>
+                                        {!disputes.some(d => d.milestoneId === item.id) && (
+                                          <Button variant="outline" size="sm" className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                                            disabled={actionPending === item.id}
+                                            onClick={() => handleDispute(item.id)}>
+                                            <AlertTriangle className="h-3 w-3 mr-1" />Dispute
+                                          </Button>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -385,9 +395,9 @@ export function MyContracts() {
                           </div>
                         )}
 
-                        {/* Quality requirement */}
                         {meta?.testPassRate != null && (
-                          <div><p className="text-xs text-muted-foreground mb-2">Quality Requirement</p>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2">Quality Requirement</p>
                             <div className="glass rounded-lg p-3 space-y-2">
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Pass Rate</span>
@@ -402,7 +412,43 @@ export function MyContracts() {
                       </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* ── Card-level AI Verify (shown when no payTerms, or as fallback) ── */}
+                    {(() => {
+                      const anyIpfs = item.ipfsCID ?? Object.values(boardJob?.milestoneSubmissions ?? {}).find(s => s?.ipfsCID)?.ipfsCID ?? null;
+                      const hasSubmission = !!anyIpfs || status === 'submitted';
+                      if (!hasSubmission || status === 'released') return null;
+                      if (payTerms.length > 0 && boardJob) return null; // already in milestone rows
+                      const cardKey    = `${boardJob?.id ?? id}_0`;  // matches runVerification(fallbackJob, 0, ...)
+                      const cardVerif  = liveResults[cardKey] ?? boardJob?.milestoneVerifications?.[0] ?? null;
+                      const isRunning  = !!liveVerify[cardKey];
+                      const verifyDone = cardVerif?.status === 'COMPLETED';
+                      const fallbackJob = boardJob ?? { id: id, milestoneId: item.id, title, acceptanceCriteria: meta, deliverableType: item.deliverableType };
+                      return (
+                        <div className="flex flex-wrap items-center gap-2 pb-2">
+                          {anyIpfs && (
+                            <a href={`https://gateway.pinata.cloud/ipfs/${anyIpfs}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                              <ExternalLink className="h-3 w-3" />View Submission
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            disabled={isRunning}
+                            onClick={() => runVerification(fallbackJob, 0, anyIpfs)}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            {isRunning
+                              ? <><Loader2 className="h-3 w-3 animate-spin" />Verifying…</>
+                              : verifyDone
+                                ? <><RefreshCw className="h-3 w-3" />Re-verify</>
+                                : <><Brain className="h-3 w-3" />Run AI Verification</>}
+                          </button>
+                          {cardVerif && <VerifPill v={cardVerif} isRunning={isRunning} />}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Card-level actions */}
                     <div className="flex flex-wrap gap-3 pt-2 border-t border-border">
                       {status === 'open' && item._src === 'board' && (
                         <Button variant="outline" size="sm"
@@ -417,17 +463,10 @@ export function MyContracts() {
                           <Wallet className="h-4 w-4" /> Fund Escrow
                         </Button>
                       )}
-                      {isChain && (
-                        <a href={`/verification/${item.id}`} target="_blank" rel="noopener noreferrer">
+                      {(isChain || item._src === 'board_funded') && (
+                        <a href={`/verification/${item.milestoneId ?? item.id}`} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm" className="gap-2">
-                            <Eye className="h-4 w-4" /> View On-Chain Details
-                          </Button>
-                        </a>
-                      )}
-                      {item._src === 'board_funded' && item.milestoneId && (
-                        <a href={`/verification/${item.milestoneId}`} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm" className="gap-2">
-                            <Eye className="h-4 w-4" /> View On-Chain Details
+                            <Eye className="h-4 w-4" /> View On-Chain
                           </Button>
                         </a>
                       )}
