@@ -159,6 +159,10 @@ class OllamaProvider(LLMProvider):
             "stream": False,
             "messages": messages,
             "options": {"temperature": self._temperature},
+            # Disable chain-of-thought thinking for qwen3/qwen3.5.
+            # Without this these models think for 2-5 minutes before responding,
+            # causing frontend polling timeouts. Other models safely ignore this key.
+            "think": False,
         }
         url = f"{self._base_url}/api/chat"
         logger.debug("[OllamaProvider] POST %s model=%s", url, self._model)

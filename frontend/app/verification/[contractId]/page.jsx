@@ -21,6 +21,7 @@ import { StatusBadge } from '@/components/status-badge';
 import { TransactionModal } from '@/components/transaction-modal';
 import { useContracts } from '@/contexts/contract-context';
 import { useWallet } from '@/contexts/wallet-context';
+import { useJobBoard } from '@/contexts/job-board-context';
 import { useToast } from '@/hooks/use-toast';
 import { useVerification } from '@/hooks/use-verification';
 import { Button } from '@/components/ui/button';
@@ -105,6 +106,7 @@ export default function VerificationPage({ params }) {
   const { contracts, getContract, releasePayment, raiseDispute } = useContracts();
   const { toast }      = useToast();
 
+  const { jobByMilestoneId } = useJobBoard();
   const [contract,         setContract]         = useState(null);
   const [contractLoading,  setContractLoading]  = useState(true);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
@@ -120,9 +122,25 @@ export default function VerificationPage({ params }) {
       .catch(() => setContractLoading(false));
   }, [contractId, contracts, getContract]);
 
-  // Derive jobId — the oracle stores results keyed by milestoneId
-  // The ipfsCID on the contract tells us work was submitted
-  const jobId = contract?.ipfsCID ? contractId : null;
+  // Derive AI verification jobId:
+  // The board stores the UUID returned by the AI backend per milestone.
+  // contractId is the on-chain milestoneId; use it to find the board job.
+  const boardJob = jobByMilestoneId(contractId);
+  // Look in all milestone verifications for the most recent AI jobId
+  const aiJobId = (() => {
+    const mVerifs = boardJob?.milestoneVerifications ?? {};
+    // Find the last milestone that has a completed verification with an aiJobId
+    const verifs = Object.values(mVerifs);
+    const latest = [...verifs].reverse().find(v => v?.aiJobId);
+    return latest?.aiJobId ?? null;
+  })();
+  // Also fall back to contract ipfsCID to show submission link even without jobId
+  const submissionIpfsCID = contract?.ipfsCID ?? (() => {
+    const mSubs = boardJob?.milestoneSubmissions ?? {};
+    const subs = Object.values(mSubs);
+    return subs.length > 0 ? subs[subs.length-1]?.ipfsCID : null;
+  })();
+  const jobId = aiJobId;
 
   const { result, loading: verLoading, error: verError, refetch } = useVerification(jobId);
 
@@ -232,24 +250,44 @@ export default function VerificationPage({ params }) {
         {verLoading && !result ? (
           <VerificationSkeleton/>
         ) : verError ? (
-          <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6">
-            <XCircle className="h-10 w-10 text-destructive mx-auto mb-3"/>
-            <h3 className="font-semibold text-foreground mb-1">Could not load verification result</h3>
-            <p className="text-sm text-muted-foreground mb-4">{verError}</p>
-            <Button variant="outline" onClick={refetch}>
-              <RefreshCw className="mr-2 h-4 w-4"/>Try Again
-            </Button>
+          <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6 space-y-4">
+            <XCircle className="h-10 w-10 text-destructive mx-auto"/>
+            <h3 className="font-semibold text-foreground">Could not load verification result</h3>
+            <p className="text-sm text-muted-foreground">{verError}</p>
+            {submissionIpfsCID && (
+              <a href={`https://gateway.pinata.cloud/ipfs/${submissionIpfsCID}`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+                <ExternalLink className="h-4 w-4"/>View Raw Submission on IPFS
+              </a>
+            )}
+            <div>
+              <Button variant="outline" onClick={refetch}>
+                <RefreshCw className="mr-2 h-4 w-4"/>Try Again
+              </Button>
+            </div>
           </div>
         ) : !jobId ? (
-          /* Work not yet submitted */
-          <div className="glass-card rounded-2xl border border-border p-12 text-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+          /* Work submitted but no AI verification yet, or awaiting submission */
+          <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
               <Clock className="h-8 w-8 text-muted-foreground"/>
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Awaiting Submission</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {submissionIpfsCID ? 'Submitted — Awaiting AI Verification' : 'Awaiting Submission'}
+            </h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              Work has not been submitted yet. Once the freelancer submits, the AI oracle will verify it automatically.
+              {submissionIpfsCID
+                ? 'Work has been submitted. Run AI verification from the freelancer dashboard.'
+                : 'Work has not been submitted yet. Once the freelancer submits, the AI oracle will verify it automatically.'}
             </p>
+            {submissionIpfsCID && (
+              <a href={`https://gateway.pinata.cloud/ipfs/${submissionIpfsCID}`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
+                <ExternalLink className="h-4 w-4"/>View Submission on IPFS
+              </a>
+            )}
           </div>
         ) : result?.status === 'PENDING' || result?.status === 'RUNNING' ? (
           <div className="mb-6">
@@ -385,18 +423,18 @@ export default function VerificationPage({ params }) {
                     <span className="font-mono text-xs text-foreground break-all">{result.fileHash}</span>
                   </div>
                 )}
-                {result.ipfsCID && (
+                {(result.ipfsCID || submissionIpfsCID) && (
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-border bg-muted/30 px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground shrink-0"/>
-                      <span className="text-sm text-muted-foreground">IPFS Link</span>
+                      <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0"/>
+                      <span className="text-sm text-muted-foreground">Submission (IPFS)</span>
                     </div>
                     <a
-                      href={`https://gateway.pinata.cloud/ipfs/${result.ipfsCID}`}
+                      href={`https://gateway.pinata.cloud/ipfs/${result.ipfsCID ?? submissionIpfsCID}`}
                       target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1 font-mono text-xs text-primary hover:underline break-all"
                     >
-                      {result.ipfsCID}
+                      {result.ipfsCID ?? submissionIpfsCID}
                       <ExternalLink className="h-3 w-3 shrink-0"/>
                     </a>
                   </div>
