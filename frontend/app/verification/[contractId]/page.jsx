@@ -138,7 +138,20 @@ export default function VerificationPage({ params }) {
 
   // ── Local cached result (available cross-wallet from localStorage) ─────────
   // Written by recordVerification under key mv_${milestoneId}
-  const localRecord = loadVerifyRecord(contractId);
+  // localRecord must be read client-side only (localStorage not available during SSR).
+  // Using useState+useEffect prevents hydration mismatch.
+  const [localRecord, setLocalRecord] = useState(null);
+  useEffect(() => {
+    setLocalRecord(loadVerifyRecord(contractId));
+    // Also re-check when storage changes (other tab writes the result)
+    const onStorage = (e) => {
+      if (e.key === `mv_${contractId}` && e.newValue) {
+        try { setLocalRecord(JSON.parse(e.newValue)); } catch {}
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [contractId]);
 
   // ── Submission IPFS CID ───────────────────────────────────────────────────
   const submissionIpfsCID = contract?.ipfsCID
