@@ -160,3 +160,43 @@ export function parseVerificationResult(raw) {
     details,
   };
 }
+
+// ── Oracle: post verified result on-chain ─────────────────────────────────────
+// After AI verification completes, call the oracle service which signs the
+// result with the oracle private key and calls postVerificationResult on-chain.
+// This transitions the contract state from SUBMITTED → VERIFIED/REJECTED/DISPUTED
+// and makes the result visible to ALL wallets by reading from the blockchain.
+
+const ORACLE_URL = process.env.NEXT_PUBLIC_ORACLE_URL ?? 'http://localhost:3001';
+
+/**
+ * Submit the AI verification result to the oracle for on-chain posting.
+ * The oracle signs the (milestoneId, score) pair and calls
+ * EscrowContract.postVerificationResult() on Sepolia.
+ *
+ * @param {string|number} milestoneId  On-chain milestone ID (e.g. "2")
+ * @param {number}        score        0.0 – 1.0 from AI backend
+ * @param {string}        ipfsCID      IPFS CID of the submission (optional)
+ * @returns {Promise<{success, txHash, verdict, score}>}
+ */
+export async function postResultToOracle(milestoneId, score, ipfsCID = null) {
+  // Strip the "_0" suffix if milestoneId was constructed as "2_0"
+  const cleanId = String(milestoneId).replace(/_\d+$/, '');
+
+  const response = await fetch(`${ORACLE_URL}/oracle/submit-result`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({
+      milestoneId: cleanId,
+      score,
+      ipfsCID,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error ?? `Oracle request failed (${response.status})`);
+  }
+
+  return response.json();
+}

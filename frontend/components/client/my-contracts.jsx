@@ -9,7 +9,7 @@ import { useJobBoard }  from '@/contexts/job-board-context';
 import { TransactionModal } from '@/components/transaction-modal';
 import { useToast }     from '@/hooks/use-toast';
 import {
-  submitVerificationJob, waitForVerification, parseVerificationResult,
+  submitVerificationJob, waitForVerification, parseVerificationResult, postResultToOracle,
 } from '@/lib/ai-verification';
 import {
   ChevronDown, ChevronUp, Code, FileText, Palette, Calendar,
@@ -43,7 +43,7 @@ function VerifPill({ v, isRunning }) {
 }
 
 export function MyContracts() {
-  const { contracts, releasePayment, raiseDispute, disputes, isLoading, createMilestone } = useContracts();
+  const { contracts, releasePayment, raiseDispute, disputes, isLoading, createMilestone, getAllContracts } = useContracts();
   const { walletAddress } = useWallet();
   const {
     clientJobs, markFunded, cancelJob, releaseMilestonePayment, recordVerification,
@@ -89,6 +89,20 @@ export function MyContracts() {
       const parsed = parseVerificationResult(finalRaw);
       recordVerification(boardJob.id, milestoneIdx, { ...parsed, aiJobId, submissionIpfsCID: ipfsCID });
       setLiveResults(p => ({ ...p, [key]: parsed }));
+
+      // Post result on-chain via oracle so all wallets see updated contract state
+      if (parsed.score != null) {
+        try {
+          const cleanMilestoneId = boardJob.milestoneId?.toString().replace(/_\d+$/, '');
+          if (cleanMilestoneId) {
+            await postResultToOracle(cleanMilestoneId, parsed.score, ipfsCID);
+            if (getAllContracts) await getAllContracts();
+          }
+        } catch (oracleErr) {
+          console.warn('[oracle] Failed to post result on-chain:', oracleErr.message);
+          toast({ title: 'Note', description: 'AI result recorded but oracle could not update on-chain status.', variant: 'default' });
+        }
+      }
     } catch (err) {
       setLiveResults(p => ({ ...p, [key]: { status: 'FAILED', errorMsg: err.message } }));
       toast({ title: 'Verification error', description: err.message, variant: 'destructive' });

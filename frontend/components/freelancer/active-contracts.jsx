@@ -10,7 +10,7 @@ import { useWallet }    from "@/contexts/wallet-context";
 import { useJobBoard }  from "@/contexts/job-board-context";
 import { useToast }     from "@/hooks/use-toast";
 import {
-  submitVerificationJob, waitForVerification, parseVerificationResult,
+  submitVerificationJob, waitForVerification, parseVerificationResult, postResultToOracle,
 } from "@/lib/ai-verification";
 import {
   Clock, Wallet, Upload, CheckCircle, AlertCircle, FileUp, X,
@@ -118,7 +118,7 @@ function VerifDetails({ v }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export function ActiveContracts() {
   const { walletAddress }                           = useWallet();
-  const { contracts, submitWork, releasePayment }   = useContracts();
+  const { contracts, submitWork, releasePayment, getAllContracts } = useContracts();
   const {
     freelancerJobs, recordSubmission, recordVerification, releaseMilestonePayment,
   } = useJobBoard();
@@ -194,6 +194,22 @@ export function ActiveContracts() {
       const parsed = parseVerificationResult(finalRaw);
       recordVerification(boardJob.id, milestoneIdx, { ...parsed, aiJobId, submissionIpfsCID: ipfsCID });
       setLiveResults(p => ({ ...p, [key]: parsed }));
+
+      // Post result on-chain via oracle so both wallets see the updated state
+      if (parsed.isPassed || parsed.score != null) {
+        try {
+          const cleanMilestoneId = boardJob.milestoneId?.toString().replace(/_\d+$/, '');
+          if (cleanMilestoneId) {
+            await postResultToOracle(cleanMilestoneId, parsed.score, ipfsCID);
+            // Refresh on-chain contracts so dashboards update immediately
+            if (getAllContracts) await getAllContracts();
+          }
+        } catch (oracleErr) {
+          // Oracle posting failed — result still shown from liveResults/board
+          console.warn('[oracle] Failed to post result on-chain:', oracleErr.message);
+          toast({ title: 'Note', description: 'AI result verified but could not update on-chain status. The oracle service may be offline.', variant: 'default' });
+        }
+      }
     } catch (err) {
       setLiveResults(p => ({ ...p, [key]: { status: 'FAILED', errorMsg: err.message, errorCode: 'CLIENT_ERROR' } }));
       toast({ title: 'Verification error', description: err.message, variant: 'destructive' });

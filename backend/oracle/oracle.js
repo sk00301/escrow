@@ -499,6 +499,13 @@ function httpGet(url) {
 
 function startStatusServer() {
   const server = http.createServer((req, res) => {
+
+    // ── CORS headers so the Next.js frontend can call this ─────────────────
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
     if (req.method === 'GET' && req.url === '/oracle/status') {
       const status = {
         running:        state.running,
@@ -512,9 +519,57 @@ function startStatusServer() {
       };
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(status, null, 2));
+
     } else if (req.method === 'GET' && req.url === '/oracle/health') {
       res.writeHead(200, { 'Content-Type': 'text/plain' });
       res.end('OK');
+
+    // ── POST /oracle/submit-result ─────────────────────────────────────────
+    // Called by the frontend after AI verification completes.
+    // Body: { milestoneId, score, ipfsCID }
+    // Signs result with oracle key and calls postVerificationResult on-chain.
+    } else if (req.method === 'POST' && req.url === '/oracle/submit-result') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const payload = JSON.parse(body);
+          const { milestoneId, score, ipfsCID } = payload;
+
+          if (milestoneId === undefined || score === undefined) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'milestoneId and score are required' }));
+            return;
+          }
+
+          logger.info(`[oracle/submit-result] Request for milestone ${milestoneId} score=${score}`);
+
+          // Build result object in the same shape postResultOnChain expects
+          const result = { score: Number(score), verdict: null, ipfsCID };
+          const onChainResult = await postResultOnChain(milestoneId, result);
+
+          if (!onChainResult) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Failed to post result on-chain — check oracle logs' }));
+            return;
+          }
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success:     true,
+            milestoneId: onChainResult.milestoneId,
+            score:       onChainResult.scoreInt,
+            verdict:     onChainResult.verdict,
+            txHash:      onChainResult.txHash,
+            blockNumber: onChainResult.blockNumber,
+          }));
+        } catch (err) {
+          logger.error('[oracle/submit-result] Error', { message: err.message });
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err.message }));
+        }
+      });
+
     } else {
       res.writeHead(404);
       res.end('Not found');

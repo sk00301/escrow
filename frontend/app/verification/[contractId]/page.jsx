@@ -24,6 +24,7 @@ import { useWallet } from '@/contexts/wallet-context';
 import { useJobBoard, loadVerifyRecord } from '@/contexts/job-board-context';
 import { useToast } from '@/hooks/use-toast';
 import { useVerification } from '@/hooks/use-verification';
+import { submitVerificationJob, waitForVerification, parseVerificationResult } from '@/lib/ai-verification';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -31,7 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   ArrowLeft, CheckCircle, XCircle, AlertTriangle, FileCode,
   ExternalLink, Shield, Clock, Hash, Activity, ChevronRight,
-  RefreshCw, Loader2, DollarSign, Scale,
+  RefreshCw, Loader2, DollarSign, Scale, Brain,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -111,6 +112,8 @@ export default function VerificationPage({ params }) {
   const [contractLoading,  setContractLoading]  = useState(true);
   const [showReleaseModal, setShowReleaseModal] = useState(false);
   const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [pageVerifying, setPageVerifying]         = useState(false);
+  const [pageVerifResult, setPageVerifResult]     = useState(null);
 
   // Load contract — from cache first, then on-chain if needed
   useEffect(() => {
@@ -143,36 +146,62 @@ export default function VerificationPage({ params }) {
     ?? localRecord?.submissionIpfsCID
     ?? null;
 
+  // ── Page-level verify: any wallet can trigger verification via the IPFS CID ─
+  const runPageVerification = useCallback(async () => {
+    const cid = submissionIpfsCID;
+    if (!cid || pageVerifying) return;
+    setPageVerifying(true);
+    setPageVerifResult({ status: 'PENDING' });
+    try {
+      const meta = boardJob?.acceptanceCriteria ?? null;
+      const { jobId: newJobId } = await submitVerificationJob({
+        milestoneId: contractId,
+        ipfsCID: cid,
+        acceptanceCriteria: meta,
+        jobTitle: contract?.milestoneTitle ?? `Milestone #${contractId}`,
+        deliverableType: contract?.deliverableType ?? boardJob?.deliverableType ?? 'document',
+        acceptanceThreshold: (meta?.testPassRate ?? 75) / 100,
+      });
+      const finalRaw = await waitForVerification(newJobId, raw => {
+        setPageVerifResult(parseVerificationResult(raw));
+      }, { intervalMs: 5000, maxAttempts: 150 });
+      const parsed = parseVerificationResult(finalRaw);
+      setPageVerifResult(parsed);
+      // Persist so subsequent views find it
+      try { localStorage.setItem(`mv_${contractId}`, JSON.stringify({ ...parsed, aiJobId: newJobId, submissionIpfsCID: cid })); } catch {}
+    } catch (err) {
+      setPageVerifResult({ status: 'FAILED', errorMsg: err.message });
+    } finally {
+      setPageVerifying(false);
+    }
+  }, [submissionIpfsCID, contractId, contract, boardJob, pageVerifying]);
+
   // Poll the AI backend only when we have a UUID; otherwise show localRecord
   const { result: liveResult, loading: verLoading, error: verError, refetch } = useVerification(aiJobId);
 
-  // Merge: live poll wins if available, else use the stored record
-  // Convert localRecord (parseVerificationResult shape) to useVerification shape
+  // Merge: live poll > page-triggered > stored local record
   const result = liveResult ?? (() => {
-    if (!localRecord || localRecord.status !== 'COMPLETED') return null;
-    const pct = v => (v != null ? Math.round(v * 100) : null);
-    return {
-      status:       localRecord.status,
-      verdict:      (localRecord.verdict ?? 'PENDING').toLowerCase(),
-      overallScore: pct(localRecord.score),
-      score:        localRecord.score,
+    const rec = pageVerifResult?.status === 'COMPLETED' ? pageVerifResult
+               : localRecord?.status === 'COMPLETED' ? localRecord
+               : null;
+    return rec ? {
+      status:       rec.status,
+      verdict:      (rec.verdict ?? 'PENDING').toLowerCase(),
+      overallScore: rec.score != null ? Math.round(rec.score * 100) : null,
+      score:        rec.score,
       breakdown:    {},
       testPassRate: null,
-      passedTests:  [],
-      failedTests:  [],
-      passedCount:  0,
-      failedCount:  0,
-      totalTests:   0,
+      passedTests:  [], failedTests:  [],
+      passedCount:  0, failedCount:  0, totalTests: 0,
       fileHash:     null,
       ipfsCID:      submissionIpfsCID,
       ipfsLink:     submissionIpfsCID ? `ipfs://${submissionIpfsCID}` : null,
-      submissionTimestamp: localRecord.details?.submittedAt ?? new Date().toISOString(),
-      completedAt:  null,
-      elapsedSec:   0,
-      errorCode:    localRecord.errorCode ?? null,
-      errorMessage: localRecord.errorMsg  ?? null,
-      _raw: localRecord,
-    };
+      submissionTimestamp: new Date().toISOString(),
+      completedAt:  null, elapsedSec: 0,
+      errorCode:    rec.errorCode ?? null,
+      errorMessage: rec.errorMsg  ?? null,
+      _raw: rec,
+    } : null;
   })();
 
   // Determine who is viewing
@@ -298,19 +327,29 @@ export default function VerificationPage({ params }) {
               </Button>
             </div>
           </div>
-        ) : !jobId ? (
-          /* Work submitted but no AI verification yet, or awaiting submission */
-          <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6 space-y-4">
+        ) : !result ? (
+          /* Work submitted — show inline verification runner for any wallet */
+          <div className="glass-card rounded-2xl border border-border p-8 text-center mb-6 space-y-5">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-              <Clock className="h-8 w-8 text-muted-foreground"/>
+              {pageVerifying
+                ? <Loader2 className="h-8 w-8 text-primary animate-spin"/>
+                : submissionIpfsCID
+                  ? <Brain className="h-8 w-8 text-primary"/>
+                  : <Clock className="h-8 w-8 text-muted-foreground"/>}
             </div>
             <h3 className="text-lg font-semibold text-foreground">
-              {submissionIpfsCID ? 'Submitted — Awaiting AI Verification' : 'Awaiting Submission'}
+              {pageVerifying
+                ? (pageVerifResult?.status === 'PENDING' ? 'Queued…' : 'Verifying with AI…')
+                : submissionIpfsCID
+                  ? 'Submission Ready for Verification'
+                  : 'Awaiting Submission'}
             </h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              {submissionIpfsCID
-                ? 'Work has been submitted. Run AI verification from the freelancer dashboard.'
-                : 'Work has not been submitted yet. Once the freelancer submits, the AI oracle will verify it automatically.'}
+              {pageVerifying
+                ? 'AI is evaluating the submission against acceptance criteria. This may take a few minutes.'
+                : submissionIpfsCID
+                  ? 'Work has been submitted. Run AI verification to evaluate the deliverable.'
+                  : 'Work has not been submitted yet.'}
             </p>
             {submissionIpfsCID && (
               <a href={`https://gateway.pinata.cloud/ipfs/${submissionIpfsCID}`}
@@ -318,6 +357,15 @@ export default function VerificationPage({ params }) {
                 className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline">
                 <ExternalLink className="h-4 w-4"/>View Submission on IPFS
               </a>
+            )}
+            {submissionIpfsCID && (
+              <div>
+                <Button onClick={runPageVerification} disabled={pageVerifying} className="gap-2">
+                  {pageVerifying
+                    ? <><Loader2 className="h-4 w-4 animate-spin"/>Verifying…</>
+                    : <><Brain className="h-4 w-4"/>Run AI Verification</>}
+                </Button>
+              </div>
             )}
           </div>
         ) : result?.status === 'PENDING' || result?.status === 'RUNNING' ? (
