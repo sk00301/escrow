@@ -459,7 +459,8 @@ export default function VerificationPage({ params }) {
               </div>
             )}
 
-            {/* ── Passed / Failed tests ── */}
+            {/* ── Passed / Failed tests — only for code submissions with test results ── */}
+            {(result.totalTests ?? 0) > 0 && (
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="glass-card rounded-2xl border border-border p-6">
                 <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -499,6 +500,7 @@ export default function VerificationPage({ params }) {
                 )}
               </div>
             </div>
+            )}
 
             {/* ── On-chain proof ── */}
             <div className="glass-card rounded-2xl border border-border p-6 mb-6">

@@ -4,6 +4,7 @@ import { StatsCard } from '@/components/stats-card';
 import { useContracts } from '@/contexts/contract-context';
 import { useWallet } from '@/contexts/wallet-context';
 import { useUser } from '@/contexts/user-context';
+import { useJobBoard } from '@/contexts/job-board-context';
 import { FileCheck, Clock, Wallet, TrendingUp, Calendar } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import {
@@ -24,12 +25,31 @@ export function FreelancerOverview() {
   const { contracts }  = useContracts();
   const { walletAddress } = useWallet();
   const { userStats }  = useUser();
+  const { freelancerJobs } = useJobBoard();
+  const boardJobs = freelancerJobs(walletAddress);
 
-  // Active milestones for this freelancer
-  const activeMilestones = contracts.filter(c =>
+  // Active milestones: on-chain funded/submitted + board accepted (pre-escrow)
+  const onChainActive = contracts.filter(c =>
     c.freelancerAddress?.toLowerCase() === walletAddress?.toLowerCase() &&
     (c.status === 'funded' || c.status === 'submitted')
   );
+  const boardAccepted = boardJobs.filter(j => j.status === 'accepted');
+  // Merge, deduplicate by milestoneId
+  const fundedIds = new Set(boardJobs.filter(j => j.milestoneId).map(j => j.milestoneId));
+  const activeMilestones = [
+    ...boardAccepted.map(j => ({
+      id: j.id,
+      milestoneTitle: j.title,
+      clientAddress: j.clientAddress,
+      amount: j.amount ?? 0,
+      deadline: j.deadline,
+      status: 'accepted',
+      _isBoard: true,
+    })),
+    ...onChainActive
+      .filter(c => !boardAccepted.find(j => j.milestoneId === c.id))
+      .map(c => ({ ...c, _isBoard: false })),
+  ];
 
   // Build monthly earnings chart data from real released contracts
   const earningsChartData = useMemo(() => {

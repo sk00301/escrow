@@ -7,17 +7,19 @@ import React, {
 import { ethers } from 'ethers';
 import { useWallet }    from '@/contexts/wallet-context';
 import { useContracts } from '@/contexts/contract-context';
+import { useJobBoard }  from '@/contexts/job-board-context';
 
 const ROLES        = ['client', 'freelancer', 'jury'];
-const STORAGE_KEY  = 'aegistra_active_role';
+const STORAGE_KEY  = 'escrowchain_active_role';
 
 const UserContext = createContext(undefined);
 
 export function UserProvider({ children }) {
   const { walletAddress, isConnected }        = useWallet();
   const { contracts, disputes, jury, escrow } = useContracts();
+  const { jobs }                              = useJobBoard();
 
-  // ── Active role — persisted per wallet ────────────────────────────────────
+  // ── Active role ────────────────────────────────────────────────────────────
   const [activeRole, _setActiveRole] = useState(() => {
     if (typeof window === 'undefined') return 'client';
     return localStorage.getItem(STORAGE_KEY) ?? 'client';
@@ -28,16 +30,6 @@ export function UserProvider({ children }) {
     _setActiveRole(role);
     if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, role);
   }, []);
-
-  // Reset role storage when wallet disconnects
-  useEffect(() => {
-    if (!isConnected) {
-      // Don't clear — remember role for next connection
-    }
-  }, [isConnected]);
-
-  // ── Notifications ─────────────────────────────────────────────────────────
-  const [notifications, setNotifications] = useState([]);
 
   // ── Juror on-chain state ──────────────────────────────────────────────────
   const [jurorStake,    setJurorStake]    = useState(0);
@@ -53,7 +45,10 @@ export function UserProvider({ children }) {
       .catch(() => setJurorIsActive(false));
   }, [jury, walletAddress, isConnected]);
 
-  // ── Derived stats from on-chain data ──────────────────────────────────────
+  // ── Notifications ─────────────────────────────────────────────────────────
+  const [notifications, setNotifications] = useState([]);
+
+  // ── Derived stats — merge on-chain contracts + board jobs ─────────────────
   const userStats = useMemo(() => {
     if (!walletAddress) {
       return {
@@ -63,24 +58,59 @@ export function UserProvider({ children }) {
       };
     }
     const addr = walletAddress.toLowerCase();
+
+    // On-chain contracts (funded and beyond)
     const myClient     = contracts.filter(c => c.clientAddress?.toLowerCase()     === addr);
     const myFreelancer = contracts.filter(c => c.freelancerAddress?.toLowerCase() === addr);
 
-    const activeContracts = myClient.filter(c =>
+    // Board jobs (pre-funding: open, accepted; or board-funded not yet in contracts)
+    const jobList = Object.values(jobs ?? {});
+    const myClientJobs     = jobList.filter(j => j.clientAddress?.toLowerCase()     === addr);
+    const myFreelancerJobs = jobList.filter(j => j.freelancerAddress?.toLowerCase() === addr);
+
+    // ── CLIENT stats ──────────────────────────────────────────────────────────
+    // Active = on-chain active + board open/accepted (not yet funded)
+    const onChainActive    = myClient.filter(c =>
       ['funded','submitted','verified','disputed'].includes(c.status)).length;
-    const pendingReviews  = myClient.filter(c => c.status === 'verified').length;
-    const totalPaid       = myClient.filter(c => c.status === 'released')
+    const boardPreFund     = myClientJobs.filter(j =>
+      ['open','accepted'].includes(j.status)).length;
+    const activeContracts  = onChainActive + boardPreFund;
+
+    // Pending reviews = on-chain verified (awaiting client release)
+    const pendingReviews   = myClient.filter(c => c.status === 'verified').length;
+
+    // Total paid = on-chain released
+    const totalPaid        = myClient.filter(c => c.status === 'released')
       .reduce((s, c) => s + (c.amount ?? 0), 0);
-    const disputesOpen    = disputes.filter(d =>
-      d.clientAddress?.toLowerCase() === addr || d.freelancerAddress?.toLowerCase() === addr
+
+    // Disputes
+    const disputesOpen     = disputes.filter(d =>
+      d.clientAddress?.toLowerCase()     === addr ||
+      d.freelancerAddress?.toLowerCase() === addr
     ).length;
 
-    const activeMilestones = myFreelancer.filter(c =>
+    // ── FREELANCER stats ──────────────────────────────────────────────────────
+    // Active milestones = on-chain funded/submitted + board accepted (escrow pending)
+    const onChainActiveMil = myFreelancer.filter(c =>
       ['funded','submitted'].includes(c.status)).length;
-    const pendingPayments  = myFreelancer.filter(c => c.status === 'verified')
+    const boardAccepted    = myFreelancerJobs.filter(j => j.status === 'accepted').length;
+    const activeMilestones = onChainActiveMil + boardAccepted;
+
+    // Pending payments = on-chain verified (AI approved, awaiting release)
+    // + board milestones that have AI-approved verification results
+    const onChainPending   = myFreelancer.filter(c => c.status === 'verified')
       .reduce((s, c) => s + (c.amount ?? 0), 0);
+    const boardPending     = myFreelancerJobs.filter(j => {
+      if (!j.milestoneVerifications) return false;
+      return Object.values(j.milestoneVerifications).some(v => v?.isPassed);
+    }).reduce((s, j) => s + (j.amount ?? 0), 0);
+    const pendingPayments  = onChainPending + boardPending;
+
+    // Total earned = on-chain released
     const totalEarned      = myFreelancer.filter(c => c.status === 'released')
       .reduce((s, c) => s + (c.amount ?? 0), 0);
+
+    // Success rate = on-chain only (need settled state)
     const completed        = myFreelancer.filter(c =>
       ['released','verified','rejected','refunded'].includes(c.status));
     const successes        = myFreelancer.filter(c =>
@@ -92,7 +122,8 @@ export function UserProvider({ children }) {
       activeContracts, pendingReviews,
       totalPaid:       parseFloat(totalPaid.toFixed(4)),
       disputesOpen,
-      activeMilestones, pendingPayments: parseFloat(pendingPayments.toFixed(4)),
+      activeMilestones,
+      pendingPayments: parseFloat(pendingPayments.toFixed(4)),
       totalEarned:     parseFloat(totalEarned.toFixed(4)),
       successRate,
       stakedTokens:       jurorStake,
@@ -100,40 +131,32 @@ export function UserProvider({ children }) {
       accuracyRate:       0,
       totalRewardsEarned: 0,
     };
-  }, [contracts, disputes, walletAddress, jurorStake]);
+  }, [contracts, disputes, jobs, walletAddress, jurorStake]);
 
   // ── Notification helpers ──────────────────────────────────────────────────
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = useCallback((id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  }, []);
-
-  const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, []);
-
-  const addNotification = useCallback((notification) => {
+  const unreadCount  = notifications.filter(n => !n.read).length;
+  const markAsRead   = useCallback((id) =>
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n)), []);
+  const markAllAsRead = useCallback(() =>
+    setNotifications(prev => prev.map(n => ({ ...n, read: true }))), []);
+  const addNotification = useCallback((notification) =>
     setNotifications(prev => [{
       ...notification,
       id:        `notif-${Date.now()}`,
       timestamp: new Date(),
       read:      false,
-    }, ...prev]);
-  }, []);
+    }, ...prev]), []);
 
   // ── Profile shapes ────────────────────────────────────────────────────────
   const userProfile = { isJuror: jurorIsActive, juryStake: jurorStake, reputation: 0, skills: [] };
   const jurorData   = { stakedTokens: jurorStake, casesReviewed: 0, accuracyRate: 0, totalRewardsEarned: 0, reputation: 0, skills: [] };
-
-  // Keep legacy userRole alias so nothing else breaks
   const userRole    = activeRole;
   const setUserRole = setActiveRole;
 
   return (
     <UserContext.Provider value={{
       activeRole, setActiveRole,
-      userRole,   setUserRole,     // legacy aliases
+      userRole,   setUserRole,
       userStats, userProfile, jurorData,
       notifications, unreadCount,
       markAsRead, markAllAsRead, addNotification,
