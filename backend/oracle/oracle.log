@@ -265,3 +265,65 @@
 [2026-05-04T05:23:16.586Z] [INFO] [2] Signature: 0xc5ff2f8d31e53b3177…
 [2026-05-04T05:23:17.046Z] [ERROR] [2] Gas estimation failed {"message":"execution reverted: \"EscrowContract: caller is not the oracle\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a2063616c6c6572206973206e6f7420746865206f7261636c65000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: caller is not the oracle\", transaction={ \"data\": \"0x5cacf2450000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000005c00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041c5ff2f8d31e53b3177b5819e03a668192771969475b28f28ae190721eb6dfeef3f10ebf5922cb5e9d64fd6fd85c7e7c62ddfa714761cbe05fdfe1e83cf2ec5a31b00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb9316f9E1E7c3d2dF37957b04C5DD9DF2920e81A\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: caller is not the oracle\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
 [2026-05-04T05:23:17.047Z] [ERROR] [2] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-04T08:02:43.260Z] [INFO] [oracle/submit-result] Request for milestone 2 score=0.92
+[2026-05-04T08:02:43.260Z] [INFO] [2] Preparing on-chain result post…
+[2026-05-04T08:02:43.260Z] [INFO] [2] Score: 0.92 → 92  |  Verdict: APPROVED
+[2026-05-04T08:02:43.264Z] [INFO] [2] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-04T08:02:43.272Z] [INFO] [2] Signature: 0xc5ff2f8d31e53b3177…
+[2026-05-04T08:02:43.822Z] [ERROR] [2] Gas estimation failed {"message":"execution reverted: \"EscrowContract: caller is not the oracle\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a2063616c6c6572206973206e6f7420746865206f7261636c65000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: caller is not the oracle\", transaction={ \"data\": \"0x5cacf2450000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000005c00000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041c5ff2f8d31e53b3177b5819e03a668192771969475b28f28ae190721eb6dfeef3f10ebf5922cb5e9d64fd6fd85c7e7c62ddfa714761cbe05fdfe1e83cf2ec5a31b00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb9316f9E1E7c3d2dF37957b04C5DD9DF2920e81A\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: caller is not the oracle\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-04T08:02:43.823Z] [ERROR] [2] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-04T08:02:53.987Z] [WARN] SIGINT received — shutting down oracle gracefully…
+[2026-05-04T08:03:00.383Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T08:03:00.390Z] [INFO]   Oracle Bridge Service starting…
+[2026-05-04T08:03:00.390Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T08:03:00.391Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-04T08:03:00.391Z] [INFO]   AI service:       http://localhost:8000
+[2026-05-04T08:03:00.391Z] [INFO]   Status port:      3001
+[2026-05-04T08:03:00.392Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-05-04T08:03:00.392Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T08:03:00.402Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-04T08:03:00.461Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-05-04T08:03:01.215Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-05-04T08:03:01.234Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-05-04T08:03:01.241Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-04T08:03:01.241Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-05-04T08:03:01.241Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-05-04T08:06:31.840Z] [INFO] [oracle/submit-result] Request for milestone 2 score=0.85
+[2026-05-04T08:06:31.841Z] [INFO] [2] Preparing on-chain result post…
+[2026-05-04T08:06:31.841Z] [INFO] [2] Score: 0.85 → 85  |  Verdict: APPROVED
+[2026-05-04T08:06:31.991Z] [INFO] [2] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-04T08:06:32.009Z] [INFO] [2] Signature: 0x07c1bd4553d6f90302…
+[2026-05-04T08:06:32.910Z] [ERROR] [2] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid oracle signature\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964206f7261636c65207369676e6174757265000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid oracle signature\", transaction={ \"data\": \"0x5cacf245000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000550000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000004107c1bd4553d6f90302f6e55ef808100a07ea5396d221c417e6cb0fe146966a4365f6b3e5a89d596c1873016daa7124df1a006cbd1543f9be178e9dcdbd8c6be31c00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid oracle signature\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-04T08:06:32.911Z] [ERROR] [2] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-04T08:19:10.695Z] [WARN] SIGINT received — shutting down oracle gracefully…
+[2026-05-04T08:19:13.299Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T08:19:13.301Z] [INFO]   Oracle Bridge Service starting…
+[2026-05-04T08:19:13.301Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T08:19:13.301Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-04T08:19:13.301Z] [INFO]   AI service:       http://localhost:8000
+[2026-05-04T08:19:13.301Z] [INFO]   Status port:      3001
+[2026-05-04T08:19:13.302Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-05-04T08:19:13.302Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T08:19:13.304Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-04T08:19:13.318Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-05-04T08:19:13.966Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-05-04T08:19:13.983Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-05-04T08:19:13.988Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-04T08:19:13.988Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-05-04T08:19:13.988Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-05-04T08:22:49.620Z] [INFO] [oracle/submit-result] Request for milestone 2 score=0.85
+[2026-05-04T08:22:49.621Z] [INFO] [2] Preparing on-chain result post…
+[2026-05-04T08:22:49.621Z] [INFO] [2] Score: 0.85 → 85  |  Verdict: APPROVED
+[2026-05-04T08:22:49.770Z] [INFO] [2] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-04T08:22:49.788Z] [INFO] [2] Signature: 0x337a43875735a13fd6…
+[2026-05-04T08:22:50.959Z] [INFO] [2] Tx sent: 0x77005db6d38cd37e41b91bbfcaec97a6936404f031d6f28be6a0ca064a1fa8c8
+[2026-05-04T08:23:28.446Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-04T08:23:28.447Z] [OK] [2] Result posted on-chain ✅
+[2026-05-04T08:23:28.447Z] [OK] [2] milestoneId:  2
+[2026-05-04T08:23:28.447Z] [OK] [2] score:        85/100
+[2026-05-04T08:23:28.447Z] [OK] [2] verdict:      APPROVED
+[2026-05-04T08:23:28.447Z] [OK] [2] txHash:       0x77005db6d38cd37e41b91bbfcaec97a6936404f031d6f28be6a0ca064a1fa8c8
+[2026-05-04T08:23:28.448Z] [OK] [2] block:        10787140
+[2026-05-04T08:23:28.448Z] [OK] [2] gasUsed:      84390
+[2026-05-04T08:23:28.448Z] [OK] [2] Etherscan: https://sepolia.etherscan.io/tx/0x77005db6d38cd37e41b91bbfcaec97a6936404f031d6f28be6a0ca064a1fa8c8
+[2026-05-04T08:23:28.448Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -353,19 +353,23 @@ async function postResultOnChain(milestoneId, result) {
 
   logger.info(`[${milestoneId}] Score: ${result.score} → ${scoreInt}  |  Verdict: ${verdict}`);
 
-  // ── Build resultHash = keccak256(milestoneId + score + verdict) ───────
-  const resultHash = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256', 'uint256', 'string'],
-      [milestoneId, scoreInt, verdict]
-    )
+  // ── Build messageHash matching EscrowContract.postVerificationResult ───
+  // Contract: keccak256(abi.encodePacked(milestoneId, score))
+  // then wraps with eth_sign prefix internally via _recoverSigner.
+  // ethers.signer.signMessage() adds the prefix automatically, so we just
+  // need to match the raw inner hash: solidityPackedKeccak256([uint256, uint256]).
+  const messageHash = ethers.solidityPackedKeccak256(
+    ['uint256', 'uint256'],
+    [milestoneId, scoreInt]
   );
 
   // ── Sign with oracle private key ──────────────────────────────────────
   const { signer } = buildHttpSigner();
 
   logger.info(`[${milestoneId}] Signing result hash with oracle wallet ${signer.address}…`);
-  const signature = await signer.signMessage(ethers.getBytes(resultHash));
+  // signMessage hashes again with "\x19Ethereum Signed Message:\n32" prefix,
+  // matching what the contract does with ethSignedHash.
+  const signature = await signer.signMessage(ethers.getBytes(messageHash));
   logger.info(`[${milestoneId}] Signature: ${signature.slice(0, 20)}…`);
 
   // ── Build contract instance with signer ──────────────────────────────
