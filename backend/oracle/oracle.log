@@ -407,3 +407,78 @@
 [2026-05-05T14:31:52.701Z] [INFO] [3] Signature: 0x33632e9cb30dab50a7…
 [2026-05-05T14:31:53.300Z] [ERROR] [3] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid state transition\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964207374617465207472616e736974696f6e000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid state transition\", transaction={ \"data\": \"0x5cacf245000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000410000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000004133632e9cb30dab50a763f73ed104494aa66c8e8085fb698ed5135b0f62d5900b02afca22b5065529c23bc38cda5e34f3c6ec07a01ec3a1580fc56e509842047c1b00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid state transition\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
 [2026-05-05T14:31:53.300Z] [ERROR] [3] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-05T19:57:26.808Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-05T19:57:26.818Z] [INFO]   Oracle Bridge Service starting…
+[2026-05-05T19:57:26.818Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-05T19:57:26.818Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-05T19:57:26.818Z] [INFO]   AI service:       http://localhost:8000
+[2026-05-05T19:57:26.818Z] [INFO]   Status port:      3001
+[2026-05-05T19:57:26.818Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-05-05T19:57:26.819Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-05T19:57:26.823Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-05T19:57:26.849Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-05-05T19:57:27.426Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-05-05T19:57:27.446Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-05-05T19:57:27.455Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-05T19:57:27.455Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-05-05T19:57:27.455Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-05-05T20:13:54.463Z] [INFO] [oracle/submit-result] Request for milestone 0 score=0.95
+[2026-05-05T20:13:54.465Z] [INFO] [0] Preparing on-chain result post…
+[2026-05-05T20:13:54.465Z] [INFO] [0] Score: 0.95 → 95  |  Verdict: APPROVED
+[2026-05-05T20:13:54.608Z] [INFO] [0] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-05T20:13:54.626Z] [INFO] [0] Signature: 0xcf9fd4b6c4fe2b03a2…
+[2026-05-05T20:13:55.860Z] [INFO] [0] Tx sent: 0x6259434e6238f93678ba68a02c1fcc2ebb0a9bcb3576d5a4c54dfb4973ec88af
+[2026-05-05T20:14:04.761Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-05T20:14:04.761Z] [OK] [0] Result posted on-chain ✅
+[2026-05-05T20:14:04.761Z] [OK] [0] milestoneId:  0
+[2026-05-05T20:14:04.761Z] [OK] [0] score:        95/100
+[2026-05-05T20:14:04.762Z] [OK] [0] verdict:      APPROVED
+[2026-05-05T20:14:04.762Z] [OK] [0] txHash:       0x6259434e6238f93678ba68a02c1fcc2ebb0a9bcb3576d5a4c54dfb4973ec88af
+[2026-05-05T20:14:04.762Z] [OK] [0] block:        10796903
+[2026-05-05T20:14:04.762Z] [OK] [0] gasUsed:      84378
+[2026-05-05T20:14:04.762Z] [OK] [0] Etherscan: https://sepolia.etherscan.io/tx/0x6259434e6238f93678ba68a02c1fcc2ebb0a9bcb3576d5a4c54dfb4973ec88af
+[2026-05-05T20:14:04.762Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-05T20:36:24.558Z] [INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-05T20:36:24.559Z] [INFO] WorkSubmitted event received {"milestoneId":"4","evidenceHash":"0x18c8e74026b27c8d…","ipfsCID":"QmTPwtMcfgMkNeGcwFJA…","block":10797002,"txHash":"0x2e8a3d1165bf8c08a1b6c5364b58f643f518b422493f0120184794b1aea93716"}
+[2026-05-05T20:36:24.561Z] [INFO] [4] Fetching milestone details from contract…
+[2026-05-05T20:36:25.069Z] [INFO] [4] Milestone fetched {"client":"0x75c24766B11f3d1d62082f7944508bEbA6E00711","freelancer":"0xa1E107794e245aa2C7325b5BbF0AAA1F4a396c19","state":2,"amount":"0.05 ETH"}
+[2026-05-05T20:36:25.070Z] [INFO] [4] Calling AI verification service… {"url":"http://localhost:8000/verify","payload":{"milestone_id":"4","submission_type":"ipfs_cid","submission_value":"QmTPwtMcfgMkNeGcwFJArA6hGCDL7LKgP8cRAPsnpHGuQx","evidence_hash":"18c8e74026b27c8d118eaebe7e97a108a3842c96f31cea4c7a6437e46e2a4544","test_commands":["pytest","--tb=short","-q"],"acceptance_threshold":0.75,"deliverable_type":"code"}}
+[2026-05-05T20:36:25.112Z] [ERROR] [4] FastAPI service unreachable {"message":"HTTP 422: {\"error\":\"test_commands: Value error, Only pytest commands are supported in this prototype. Got: '--tb=short'\",\"code\":\"VALIDATION_ERROR\",\"job_id\":null,\"detail\":[{\"type\":\"value_error\",\"loc\":\"('body', 'test_commands')\",\"msg\":\"Value error, Only pytest commands are supported in this prototype. Got: '--tb=short'\",\"input\":\"['pytest', '--tb=short', '-q']\",\"ctx\":\"{'error': ValueError(\\\"Only pytest commands are supported in this prototype. Got: '--tb=short'\\\")}\"}]}"}
+[2026-05-05T20:36:25.112Z] [WARN] [4] Retrying with mock result for prototype testing…
+[2026-05-05T20:36:25.114Z] [WARN] [4] Using mock result {"status":"COMPLETED","score":0.82,"verdict":"APPROVED","breakdown":{"tests_passed":4,"tests_total":4,"test_score":1,"static_analysis":0.85,"complexity":0.76},"job_id":"mock_4_1778013385113","ipfsCID":"QmTPwtMcfgMkNeGcwFJArA6hGCDL7LKgP8cRAPsnpHGuQx"}
+[2026-05-05T20:36:25.115Z] [INFO] [4] Preparing on-chain result post…
+[2026-05-05T20:36:25.117Z] [INFO] [4] Score: 0.82 → 82  |  Verdict: APPROVED
+[2026-05-05T20:36:25.122Z] [INFO] [4] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-05T20:36:25.132Z] [INFO] [4] Signature: 0x0d3b519a06302db1d6…
+[2026-05-05T20:36:26.172Z] [INFO] [4] Tx sent: 0x013a2f8b6590c3966875f5c56728b241004fa4f4789a69f99ca3a15d858cd45a
+[2026-05-05T20:36:39.042Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-05T20:36:39.042Z] [OK] [4] Result posted on-chain ✅
+[2026-05-05T20:36:39.043Z] [OK] [4] milestoneId:  4
+[2026-05-05T20:36:39.043Z] [OK] [4] score:        82/100
+[2026-05-05T20:36:39.043Z] [OK] [4] verdict:      APPROVED
+[2026-05-05T20:36:39.043Z] [OK] [4] txHash:       0x013a2f8b6590c3966875f5c56728b241004fa4f4789a69f99ca3a15d858cd45a
+[2026-05-05T20:36:39.043Z] [OK] [4] block:        10797003
+[2026-05-05T20:36:39.043Z] [OK] [4] gasUsed:      84361
+[2026-05-05T20:36:39.044Z] [OK] [4] Etherscan: https://sepolia.etherscan.io/tx/0x013a2f8b6590c3966875f5c56728b241004fa4f4789a69f99ca3a15d858cd45a
+[2026-05-05T20:36:39.044Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-05T20:39:51.109Z] [INFO] [oracle/submit-result] Request for milestone 4 score=0.65
+[2026-05-05T20:39:51.110Z] [INFO] [4] Preparing on-chain result post…
+[2026-05-05T20:39:51.110Z] [INFO] [4] Score: 0.65 → 65  |  Verdict: DISPUTED
+[2026-05-05T20:39:51.113Z] [INFO] [4] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-05T20:39:51.118Z] [INFO] [4] Signature: 0x2b5f905612a790d277…
+[2026-05-05T20:39:51.493Z] [ERROR] [4] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid state transition\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964207374617465207472616e736974696f6e000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid state transition\", transaction={ \"data\": \"0x5cacf24500000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000041000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000412b5f905612a790d27755e9c8e8d8db3518180aa7199a9b8eaaef4d46379569b719236ddaebf29e20b8b80be810b789a52006822c6c30ae17edc653e450766d711b00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid state transition\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-05T20:39:51.494Z] [ERROR] [4] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-05T20:43:30.375Z] [INFO] [oracle/submit-result] Request for milestone 4 score=0.5
+[2026-05-05T20:43:30.375Z] [INFO] [4] Preparing on-chain result post…
+[2026-05-05T20:43:30.375Z] [INFO] [4] Score: 0.5 → 50  |  Verdict: DISPUTED
+[2026-05-05T20:43:30.377Z] [INFO] [4] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-05T20:43:30.380Z] [INFO] [4] Signature: 0xc6acf57a2a6afa978b…
+[2026-05-05T20:43:30.942Z] [ERROR] [4] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid state transition\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964207374617465207472616e736974696f6e000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid state transition\", transaction={ \"data\": \"0x5cacf2450000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041c6acf57a2a6afa978bb38c602c1a0cd0056e42a68e706683ba9aa66bdb0c344a68aaf3768735b3f1b261fefe2714be1663fbb8bffa73968c8a4ef7dbc9dbc1241c00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid state transition\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-05T20:43:30.942Z] [ERROR] [4] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-05T20:46:18.102Z] [INFO] [oracle/submit-result] Request for milestone 4 score=0.85
+[2026-05-05T20:46:18.103Z] [INFO] [4] Preparing on-chain result post…
+[2026-05-05T20:46:18.103Z] [INFO] [4] Score: 0.85 → 85  |  Verdict: APPROVED
+[2026-05-05T20:46:18.106Z] [INFO] [4] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-05T20:46:18.111Z] [INFO] [4] Signature: 0xfc105534f648116d04…
+[2026-05-05T20:46:18.516Z] [ERROR] [4] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid state transition\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964207374617465207472616e736974696f6e000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid state transition\", transaction={ \"data\": \"0x5cacf2450000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000005500000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041fc105534f648116d0459111cb2ac1de37c5d70f8c3e46fd4f1e699d5dbe38fc7428999cc9055010253905cb43e248d92c84a898feae81d9dea7cd03c44cb5d9f1c00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid state transition\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-05T20:46:18.517Z] [ERROR] [4] This usually means the oracle address is not authorised in EscrowContract
