@@ -340,24 +340,20 @@ export function ContractProvider({ children }) {
     let evidenceData = null;
 
     // ✅ ONLY call if evidence actually exists
-    if (
-      evidence &&
-      m.evidenceHash &&
-      m.evidenceHash !== '0x' &&
-      m.evidenceHash !== '0x0000000000000000000000000000000000000000000000000000000000000000'
-    ) {
+    if (evidence) {
       try {
-        const ev = await evidence.getEvidence(milestoneId);
-
-        evidenceData = {
-          contentHash: ev.contentHash,
-          ipfsCID: ev.ipfsCID,
-          submitter: ev.submitter,
-          timestamp: Number(ev.timestamp),
-        };
-
+        const exists = await evidence.hasEvidence(milestoneId);
+        if (exists) {
+          const ev = await evidence.getEvidence(milestoneId);
+          evidenceData = {
+            contentHash: ev.contentHash,
+            ipfsCID:     ev.ipfsCID,
+            submitter:   ev.submitter,
+            timestamp:   Number(ev.timestamp),
+          };
+        }
       } catch (err) {
-        console.warn('Unexpected evidence error:', milestoneId, err);
+        console.warn('Evidence lookup failed for milestone', milestoneId, err);
       }
     }
 

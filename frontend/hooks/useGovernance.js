@@ -78,8 +78,8 @@ export function useGovernance(walletAddress, signer) {
     setLoading(true);
     setError(null);
     try {
-      const query = statusFilter ? `?status=${statusFilter}` : "";
-      const data  = await apiFetch(`/proposals${query}&limit=100`);
+      const query = statusFilter ? `?status=${statusFilter}&limit=100` : `?limit=100`;
+      const data  = await apiFetch(`/proposals${query}`);
       if (mounted.current) setProposals(data.proposals || []);
     } catch (err) {
       if (mounted.current) setError(err.message);
@@ -184,14 +184,14 @@ export function useGovernance(walletAddress, signer) {
   }, [fetchProposals, fetchStats]);
 
   useEffect(() => {
-    if (walletAddress) {
-      checkEligibility(walletAddress);
-      fetchMyVotes(walletAddress);
-    } else {
-      setEligibility(null);
-      setMyVotes({});
-    }
-  }, [walletAddress, checkEligibility, fetchMyVotes]);
+  if (walletAddress) {
+    checkEligibility(walletAddress, true); // 👈 FORCE refresh
+    fetchMyVotes(walletAddress);
+  } else {
+    setEligibility(null);
+    setMyVotes({});
+  }
+}, [walletAddress, checkEligibility, fetchMyVotes]);
 
   return {
     // State
