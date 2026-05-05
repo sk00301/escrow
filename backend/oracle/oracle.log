@@ -327,3 +327,34 @@
 [2026-05-04T08:23:28.448Z] [OK] [2] gasUsed:      84390
 [2026-05-04T08:23:28.448Z] [OK] [2] Etherscan: https://sepolia.etherscan.io/tx/0x77005db6d38cd37e41b91bbfcaec97a6936404f031d6f28be6a0ca064a1fa8c8
 [2026-05-04T08:23:28.448Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-04T18:58:26.468Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T18:58:26.471Z] [INFO]   Oracle Bridge Service starting…
+[2026-05-04T18:58:26.471Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T18:58:26.471Z] [INFO]   Escrow contract:  0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-04T18:58:26.471Z] [INFO]   AI service:       http://localhost:8000
+[2026-05-04T18:58:26.471Z] [INFO]   Status port:      3001
+[2026-05-04T18:58:26.471Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-05-04T18:58:26.471Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-04T18:58:26.475Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-04T18:58:26.493Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-05-04T18:58:27.077Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-05-04T18:58:27.098Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-05-04T18:58:27.103Z] [OK] Listening for WorkSubmitted on 0xb5aF1CAC332013DeF97d6863FC12ED104CB94b13
+[2026-05-04T18:58:27.103Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-05-04T18:58:27.103Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status
+[2026-05-05T10:43:29.654Z] [INFO] [oracle/submit-result] Request for milestone 3 score=0
+[2026-05-05T10:43:29.661Z] [INFO] [3] Preparing on-chain result post…
+[2026-05-05T10:43:29.662Z] [INFO] [3] Score: 0 → 0  |  Verdict: REJECTED
+[2026-05-05T10:43:29.896Z] [INFO] [3] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-05T10:43:29.924Z] [INFO] [3] Signature: 0xb5715e99f63e454632…
+[2026-05-05T10:43:35.987Z] [INFO] [3] Tx sent: 0x7101be26f71a8f056e7d6652619a55157056f7916884a3bce641f62c37aa1e92
+[2026-05-05T10:43:49.260Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-05T10:43:49.260Z] [OK] [3] Result posted on-chain ✅
+[2026-05-05T10:43:49.260Z] [OK] [3] milestoneId:  3
+[2026-05-05T10:43:49.260Z] [OK] [3] score:        0/100
+[2026-05-05T10:43:49.260Z] [OK] [3] verdict:      REJECTED
+[2026-05-05T10:43:49.261Z] [OK] [3] txHash:       0x7101be26f71a8f056e7d6652619a55157056f7916884a3bce641f62c37aa1e92
+[2026-05-05T10:43:49.262Z] [OK] [3] block:        10794335
+[2026-05-05T10:43:49.262Z] [OK] [3] gasUsed:      64491
+[2026-05-05T10:43:49.262Z] [OK] [3] Etherscan: https://sepolia.etherscan.io/tx/0x7101be26f71a8f056e7d6652619a55157056f7916884a3bce641f62c37aa1e92
+[2026-05-05T10:43:49.262Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

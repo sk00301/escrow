@@ -19,7 +19,7 @@ import {
 import { format } from 'date-fns';
 import { cn }     from '@/lib/utils';
 
-const PLACEHOLDER = '0x0000000000000000000000000000000001';
+const PLACEHOLDER = '0x0000000000000000000000000000000000000001';
 const deliverableIcons = { code: Code, document: FileText, design: Palette };
 
 const BOARD_BADGE = {
@@ -96,7 +96,7 @@ export function MyContracts() {
           const cleanMilestoneId = boardJob.milestoneId?.toString().replace(/_\d+$/, '');
           if (cleanMilestoneId) {
             await postResultToOracle(cleanMilestoneId, parsed.score, ipfsCID);
-            if (getAllContracts) await getAllContracts();
+            if (getAllContracts) await getAllContracts(walletAddress, 'client');
           }
         } catch (oracleErr) {
           console.warn('[oracle] Failed to post result on-chain:', oracleErr.message);
@@ -122,7 +122,7 @@ export function MyContracts() {
       .filter(j => ['open', 'accepted', 'cancelled'].includes(j.status))
       .map(j => ({ ...j, _src: 'board' })),
     ...boardJobs
-      .filter(j => j.status === 'funded' && j.milestoneId)
+      .filter(j => ['funded', 'completed'].includes(j.status) && j.milestoneId)
       .map(j => {
         const chain = contracts.find(c => c.id === j.milestoneId);
         if (chain) return { ...chain, _boardJob: j, _src: 'chain' };
@@ -166,8 +166,14 @@ export function MyContracts() {
       deadline:           new Date(fundingJob.deadline),
       acceptanceCriteria: fundingJob.acceptanceCriteria,
     });
-    if (result.success) {
+    // Link the board job to the on-chain milestone as soon as we have a
+    // milestoneId — even if the fund tx later failed. This prevents a ghost
+    // duplicate where the accepted board card (milestoneId: null) and the
+    // chain-legacy card both appear simultaneously for the same job.
+    if (result.milestoneId) {
       markFunded(fundingJob.id, result.milestoneId);
+    }
+    if (result.success) {
       toast({ title: 'Escrow funded!', description: `Milestone #${result.milestoneId} is live on-chain.` });
     }
     return result;

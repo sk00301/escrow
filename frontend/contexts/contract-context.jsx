@@ -334,16 +334,39 @@ export function ContractProvider({ children }) {
 
   const getContract = useCallback(async (milestoneId) => {
     if (!escrow) throw new Error('Contracts not initialised.');
+
     const m = await escrow.getMilestone(milestoneId);
+
     let evidenceData = null;
-    try {
-      const ev = await evidence?.getEvidence(milestoneId);
-      if (ev) evidenceData = {
-        contentHash: ev.contentHash, ipfsCID: ev.ipfsCID,
-        submitter: ev.submitter, timestamp: Number(ev.timestamp),
-      };
-    } catch { /* no evidence yet */ }
-    return normaliseContract(milestoneId, m, evidenceData, loadMeta(milestoneId));
+
+    // ✅ ONLY call if evidence actually exists
+    if (
+      evidence &&
+      m.evidenceHash &&
+      m.evidenceHash !== '0x' &&
+      m.evidenceHash !== '0x0000000000000000000000000000000000000000000000000000000000000000'
+    ) {
+      try {
+        const ev = await evidence.getEvidence(milestoneId);
+
+        evidenceData = {
+          contentHash: ev.contentHash,
+          ipfsCID: ev.ipfsCID,
+          submitter: ev.submitter,
+          timestamp: Number(ev.timestamp),
+        };
+
+      } catch (err) {
+        console.warn('Unexpected evidence error:', milestoneId, err);
+      }
+    }
+
+    return normaliseContract(
+      milestoneId,
+      m,
+      evidenceData,
+      loadMeta(milestoneId)
+    );
   }, [escrow, evidence, loadMeta]);
 
   // ── getAllContracts ────────────────────────────────────────────────────────

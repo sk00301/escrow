@@ -1,5 +1,6 @@
 'use client';
 import { useMemo } from 'react';
+import { TransactionHistory } from '@/components/transaction-history';
 import { StatsCard } from '@/components/stats-card';
 import { useContracts } from '@/contexts/contract-context';
 import { useWallet } from '@/contexts/wallet-context';
@@ -211,6 +212,8 @@ export function FreelancerOverview() {
           </div>
         </div>
       </div>
+      {/* Transaction History */}
+      <TransactionHistory maxItems={8} />
     </div>
   );
 }

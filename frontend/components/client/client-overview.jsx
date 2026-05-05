@@ -10,6 +10,7 @@ import { Button }  from '@/components/ui/button';
 import { Badge }   from '@/components/ui/badge';
 import { FileText, Clock, Wallet, AlertTriangle, Eye, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { TransactionHistory } from '@/components/transaction-history';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -182,6 +183,8 @@ export function ClientOverview() {
           </table>
         </div>
       </div>
+      {/* Transaction History */}
+      <TransactionHistory maxItems={8} />
     </div>
   );
 }

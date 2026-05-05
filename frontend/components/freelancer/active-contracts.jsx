@@ -202,7 +202,7 @@ export function ActiveContracts() {
           if (cleanMilestoneId) {
             await postResultToOracle(cleanMilestoneId, parsed.score, ipfsCID);
             // Refresh on-chain contracts so dashboards update immediately
-            if (getAllContracts) await getAllContracts();
+            if (getAllContracts) await getAllContracts(walletAddress, 'freelancer');
           }
         } catch (oracleErr) {
           // Oracle posting failed — result still shown from liveResults/board

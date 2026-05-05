@@ -1,0 +1,16 @@
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# ── Config ─────────────────────────────────────────────────────────────────────
+pydantic-settings==2.2.1
+python-dotenv==1.0.1
+
+# ── Database ───────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.30
+aiosqlite==0.20.0          # dev (SQLite)
+asyncpg==0.29.0            # prod (PostgreSQL)
+
+# ── Blockchain — wallet identity only, no transaction sending ──────────────────
+eth-account==0.11.2        # recover signer from MetaMask signature
+web3==7.2.0                # read completed milestones from Sepolia RPC
