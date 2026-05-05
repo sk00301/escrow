@@ -129,7 +129,7 @@ export function ActiveContracts() {
   const [showSubmitDlg, setShowSubmitDlg] = useState(false);
   const [workDesc, setWorkDesc]         = useState("");
   const [workLinks, setWorkLinks]       = useState("");
-  const [delivFile, setDelivFile]       = useState(null);
+  const [delivFiles, setDelivFiles]     = useState([]); // File[]
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileRef = useRef(null);
 
@@ -226,23 +226,24 @@ export function ActiveContracts() {
       toast({ title: 'Escrow not funded yet', description: "Client hasn't funded the escrow.", variant: 'destructive' });
       return;
     }
-    if (!workDesc.trim() && !delivFile) {
+    if (!workDesc.trim() && delivFiles.length === 0) {
       toast({ title: 'Nothing to submit', description: 'Add a file or write some notes.', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
     try {
-      const payload = delivFile
-        ? delivFile
-        : new Blob([workDesc.trim() + (workLinks ? `\nLinks:\n${workLinks}` : '')], { type: 'text/plain' });
+      // If no files, wrap text+links as a plain-text blob
+      const files = delivFiles.length > 0
+        ? delivFiles
+        : [new Blob([workDesc.trim() + (workLinks ? `\nLinks:\n${workLinks}` : '')], { type: 'text/plain' })];
 
-      const res = await submitWork(boardJob.milestoneId, payload);
+      const res = await submitWork(boardJob.milestoneId, files, { notes: workDesc.trim(), links: workLinks.trim() });
       const ipfsCID = res?.ipfsCID ?? null;
       if (ipfsCID) recordSubmission(boardJob.id, milestoneIdx, ipfsCID);
 
       toast({ title: 'Work submitted!', description: 'Starting AI verification…' });
       setShowSubmitDlg(false);
-      setWorkDesc(''); setWorkLinks(''); setDelivFile(null); setSubmitCtx(null);
+      setWorkDesc(''); setWorkLinks(''); setDelivFiles([]); setSubmitCtx(null);
 
       if (ipfsCID) runVerification(boardJob, milestoneIdx, ipfsCID);
     } catch (err) {
@@ -273,7 +274,7 @@ export function ActiveContracts() {
 
   const openSubmit = (boardJob, milestoneIdx) => {
     setSubmitCtx({ boardJob, milestoneIdx });
-    setWorkDesc(''); setWorkLinks(''); setDelivFile(null);
+    setWorkDesc(''); setWorkLinks(''); setDelivFiles([]);
     setShowSubmitDlg(true);
   };
 
@@ -375,7 +376,11 @@ export function ActiveContracts() {
                       const canSubmit    = isChain && status === 'funded' && isCurrent && !sub && !isReleased;
                       const verifyDone   = verif?.status === 'COMPLETED';
                       const verifyFailed = verif?.status === 'FAILED' || (verifyDone && !verif.isPassed);
-                      const canReupload  = !isReleased && (verifyFailed || (!sub && isCurrent && isChain && status === 'funded'));
+                      // Re-upload is valid only when the oracle has already rejected/disputed on-chain.
+                      // Local AI failure alone is not enough — the contract won't accept submitWork
+                      // unless the milestone is in FUNDED, REJECTED, or DISPUTED state.
+                      const canReupload  = !isReleased && isChain && isCurrent &&
+                        (status === 'rejected' || status === 'disputed');
                       const isApproved   = verifyDone && verif.isPassed;
 
                       return (
@@ -456,15 +461,16 @@ export function ActiveContracts() {
                               </Button>
                             )}
 
-                            {/* ── Re-upload button — shown when verification failed or rejected ── */}
-                            {!isReleased && ipfsCID && verifyFailed && (
+                            {/* ── Re-upload button — shown when oracle rejected or disputed on-chain ── */}
+                            {canReupload && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
                                 onClick={() => openSubmit(boardJob, idx)}
                               >
-                                <Upload className="mr-2 h-4 w-4" /> Re-upload &amp; Resubmit
+                                <Upload className="mr-2 h-4 w-4" />
+                                {status === 'disputed' ? 'Resubmit Work' : 'Fix & Resubmit'}
                               </Button>
                             )}
 
@@ -598,36 +604,86 @@ export function ActiveContracts() {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* File upload */}
+            {/* Multi-file upload drop zone */}
             <div>
-              <Label>Deliverable File <span className="text-muted-foreground text-xs">(recommended)</span></Label>
-              {!delivFile ? (
-                <div onClick={() => fileRef.current?.click()}
-                  className="mt-2 flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 p-6 cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-colors">
-                  <FileUp className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Click to attach deliverable</p>
-                  <p className="text-xs text-muted-foreground">.py, .js, .zip, .pdf — any file</p>
-                  <input ref={fileRef} type="file" onChange={e => setDelivFile(e.target.files?.[0] ?? null)} className="hidden" />
-                </div>
-              ) : (
-                <div className="mt-2 flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
-                  <FileUp className="h-5 w-5 text-primary shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{delivFile.name}</p>
-                    <p className="text-xs text-muted-foreground">{(delivFile.size / 1024).toFixed(1)} KB</p>
-                  </div>
-                  <button type="button" onClick={() => setDelivFile(null)} className="text-muted-foreground hover:text-destructive">
-                    <X className="h-4 w-4" />
+              <div className="flex items-center justify-between mb-1">
+                <Label>
+                  Deliverable Files
+                  <span className="text-muted-foreground text-xs ml-1">(recommended — add as many as needed)</span>
+                </Label>
+                {delivFiles.length > 0 && (
+                  <button type="button" onClick={() => setDelivFiles([])}
+                    className="text-xs text-muted-foreground hover:text-destructive transition-colors">
+                    Clear all
                   </button>
-                </div>
+                )}
+              </div>
+
+              {/* Drop zone — always visible so more files can be added */}
+              <div
+                onClick={() => fileRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-primary/60', 'bg-primary/5'); }}
+                onDragLeave={e => { e.currentTarget.classList.remove('border-primary/60', 'bg-primary/5'); }}
+                onDrop={e => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('border-primary/60', 'bg-primary/5');
+                  const dropped = Array.from(e.dataTransfer.files);
+                  if (dropped.length) setDelivFiles(prev => [...prev, ...dropped]);
+                }}
+                className="mt-2 flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/30 p-5 cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-colors">
+                <FileUp className="h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground text-center">
+                  {delivFiles.length === 0
+                    ? 'Click or drag & drop files here'
+                    : 'Click or drag to add more files'}
+                </p>
+                <p className="text-xs text-muted-foreground">.py, .js, .zip, .pdf — any format</p>
+                <input
+                  ref={fileRef} type="file" multiple className="hidden"
+                  onChange={e => {
+                    const picked = Array.from(e.target.files ?? []);
+                    if (picked.length) setDelivFiles(prev => [...prev, ...picked]);
+                    e.target.value = '';          // reset so same file can be re-added
+                  }}
+                />
+              </div>
+
+              {/* Attached files list */}
+              {delivFiles.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {delivFiles.map((f, i) => (
+                    <li key={i} className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <FileUp className="h-4 w-4 text-primary shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium truncate">{f.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{(f.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <button type="button"
+                        onClick={() => setDelivFiles(prev => prev.filter((_, j) => j !== i))}
+                        className="text-muted-foreground hover:text-destructive shrink-0">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {delivFiles.length > 1 && (
+                <p className="mt-1.5 text-[11px] text-primary/70 flex items-center gap-1">
+                  <Brain className="h-3 w-3" />
+                  {delivFiles.length} files will be bundled into a single IPFS manifest for verification.
+                </p>
               )}
             </div>
 
             {/* Notes */}
             <div>
-              <Label htmlFor="wdesc">Work Notes {!delivFile && <span className="text-destructive">*</span>}</Label>
+              <Label htmlFor="wdesc">
+                Work Notes
+                {delivFiles.length === 0 && <span className="text-destructive ml-0.5">*</span>}
+              </Label>
               <Textarea id="wdesc" placeholder="Describe what you completed and any changes from previous submission…"
-                value={workDesc} onChange={e => setWorkDesc(e.target.value)} rows={4} className="mt-2" />
+                value={workDesc} onChange={e => setWorkDesc(e.target.value)} rows={3} className="mt-2" />
             </div>
 
             {/* Links */}
@@ -653,16 +709,17 @@ export function ActiveContracts() {
             <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3">
               <Brain className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
               <p className="text-xs text-muted-foreground">
-                AI verification runs automatically after submission. You can collect milestone funds once it passes.
+                AI verification runs automatically after submission. Multiple files are uploaded as a manifest — the AI evaluates all of them together.
               </p>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSubmitDlg(false)} disabled={isSubmitting}>Cancel</Button>
-            <Button onClick={handleSubmitWork} disabled={isSubmitting || (!workDesc.trim() && !delivFile)}>
+            <Button onClick={handleSubmitWork} disabled={isSubmitting || (!workDesc.trim() && delivFiles.length === 0)}>
               {isSubmitting
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Uploading to IPFS…</>
+                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {delivFiles.length > 1 ? `Uploading ${delivFiles.length} files…` : 'Uploading to IPFS…'}</>
                 : <><Upload className="mr-2 h-4 w-4" />Submit &amp; Verify</>}
             </Button>
           </DialogFooter>

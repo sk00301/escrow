@@ -390,23 +390,43 @@ export function MyContracts() {
                                     )}
 
                                     {/* Client actions on final milestone */}
-                                    {!isReleased && isApproved && isFinal && isChain && (
-                                      <div className="flex gap-1.5 pt-1">
-                                        <Button size="sm" className="h-7 text-xs flex-1"
-                                          disabled={actionPending === item.id}
-                                          onClick={() => handleRelease(item.id)}>
-                                          {actionPending === item.id
-                                            ? <Loader2 className="h-3 w-3 animate-spin" />
-                                            : <><CheckCircle className="h-3 w-3 mr-1" />Release Final Payment</>}
-                                        </Button>
-                                        {!disputes.some(d => d.milestoneId === item.id) && (
-                                          <Button variant="outline" size="sm" className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                                    {!isReleased &&
+                                      isChain &&
+                                      (item.status === 'verified' ||
+                                        item.status === 'rejected' ||
+                                        item.status === 'disputed') &&
+                                      !disputes?.some(d => d.milestoneId === item.id) && (
+                                        <div className="flex gap-1.5 pt-1">
+                                          {/* Keep release button only for verified + final milestone */}
+                                          {item.status === 'verified' && isFinal && (
+                                            <Button
+                                              size="sm"
+                                              className="h-7 text-xs flex-1"
+                                              disabled={actionPending === item.id}
+                                              onClick={() => handleRelease(item.id)}
+                                            >
+                                              {actionPending === item.id ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                              ) : (
+                                                <>
+                                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                                  Release Final Payment
+                                                </>
+                                              )}
+                                            </Button>
+                                          )}
+
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
                                             disabled={actionPending === item.id}
-                                            onClick={() => handleDispute(item.id)}>
-                                            <AlertTriangle className="h-3 w-3 mr-1" />Dispute
+                                            onClick={() => handleDispute(item.id)}
+                                          >
+                                            <AlertTriangle className="h-3 w-3 mr-1" />
+                                            Dispute
                                           </Button>
-                                        )}
-                                      </div>
+                                        </div>
                                     )}
                                   </div>
                                 );

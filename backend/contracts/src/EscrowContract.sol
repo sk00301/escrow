@@ -13,9 +13,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  *
  * State Machine:
  *   CREATED → FUNDED → SUBMITTED → VERIFIED  → RELEASED
- *                                → REJECTED
- *                                → DISPUTED  → RESOLVED
+ *                    ↑            → REJECTED  ↘
+ *                    └────────────→ DISPUTED  → RESOLVED
  *   FUNDED  → REFUNDED  (timeout, no submission)
+ *
+ *   Resubmission: REJECTED → SUBMITTED  (freelancer corrects work)
+ *                 DISPUTED → SUBMITTED  (freelancer corrects work)
+ *   Dispute:      VERIFIED → DISPUTED   (client challenges oracle approval)
+ *                 REJECTED → DISPUTED   (freelancer challenges rejection)
  */
 contract EscrowContract is ReentrancyGuard, Ownable {
 
@@ -276,17 +281,26 @@ contract EscrowContract is ReentrancyGuard, Ownable {
         external
         milestoneExists(milestoneId)
         onlyFreelancer(milestoneId)
-        inState(milestoneId, State.FUNDED)
         nonReentrant
     {
+        Milestone storage m = milestones[milestoneId];
+
+        // Allow initial submission (FUNDED) and resubmission after oracle rejection
+        // (REJECTED = score < 45) or jury dispute (DISPUTED = score 45-74).
+        require(
+            m.state == State.FUNDED ||
+            m.state == State.REJECTED ||
+            m.state == State.DISPUTED,
+            "EscrowContract: invalid state transition"
+        );
+
         require(evidenceHash != bytes32(0), "EscrowContract: empty evidence hash");
         require(bytes(ipfsCID).length > 0,  "EscrowContract: empty IPFS CID");
         require(
-            block.timestamp <= milestones[milestoneId].deadline,
+            block.timestamp <= m.deadline,
             "EscrowContract: submission deadline has passed"
         );
 
-        Milestone storage m = milestones[milestoneId];
         m.evidenceHash  = evidenceHash;
         m.ipfsCID       = ipfsCID;
         m.state         = State.SUBMITTED;
@@ -377,14 +391,23 @@ contract EscrowContract is ReentrancyGuard, Ownable {
     function raiseDispute(uint256 milestoneId)
         external
         milestoneExists(milestoneId)
-        inState(milestoneId, State.DISPUTED)
     {
         Milestone storage m = milestones[milestoneId];
+
+        // Client can dispute an oracle-approved result (VERIFIED) or a rejection (REJECTED),
+        // or either party can escalate an already-borderline result (DISPUTED).
+        require(
+            m.state == State.VERIFIED ||
+            m.state == State.REJECTED ||
+            m.state == State.DISPUTED,
+            "EscrowContract: invalid state transition"
+        );
         require(
             msg.sender == m.client || msg.sender == m.freelancer,
             "EscrowContract: only client or freelancer can raise dispute"
         );
 
+        m.state = State.DISPUTED;
         emit DisputeRaised(milestoneId, msg.sender);
     }
 

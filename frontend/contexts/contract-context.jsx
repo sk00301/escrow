@@ -315,6 +315,7 @@ export function ContractProvider({ children }) {
 
   // ── IPFS upload ───────────────────────────────────────────────────────────
 
+  // Upload a single Blob/File; returns { cid, contentHash }
   const uploadToIPFS = useCallback(async (file) => {
     const formData = new FormData();
     formData.append('file', file instanceof Blob ? file : new Blob([file], { type: 'text/plain' }));
@@ -328,6 +329,46 @@ export function ContractProvider({ children }) {
     }
     const data = await res.json();
     return { cid: data.cid, contentHash: data.content_hash };
+  }, []);
+
+  // Upload multiple files + metadata; bundles into a manifest on IPFS.
+  // Returns { cid, contentHash, files } where cid/contentHash belong to the manifest.
+  const uploadFilesToIPFS = useCallback(async (files, { notes = '', links = '' } = {}) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+    // 1 — upload each file individually, in parallel
+    const uploads = await Promise.all(
+      files.map(async (f) => {
+        const fd = new FormData();
+        fd.append('file', f instanceof Blob ? f : new Blob([f], { type: 'text/plain' }));
+        const res = await fetch(`${apiUrl}/api/ipfs/upload`, { method: 'POST', body: fd });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `IPFS upload failed for ${f.name} (HTTP ${res.status})`);
+        }
+        const data = await res.json();
+        return { name: f.name, size: f.size, type: f.type, cid: data.cid, contentHash: data.content_hash };
+      })
+    );
+
+    // 2 — build a manifest JSON that ties everything together
+    const manifest = {
+      version: 1,
+      submittedAt: new Date().toISOString(),
+      notes: notes.trim(),
+      links: links.trim(),
+      files: uploads.map(u => ({ name: u.name, size: u.size, type: u.type, cid: u.cid })),
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+    const mfd = new FormData();
+    mfd.append('file', manifestBlob, 'manifest.json');
+    const mres = await fetch(`${apiUrl}/api/ipfs/upload`, { method: 'POST', body: mfd });
+    if (!mres.ok) {
+      const err = await mres.json().catch(() => ({}));
+      throw new Error(err.detail || `IPFS manifest upload failed (HTTP ${mres.status})`);
+    }
+    const mdata = await mres.json();
+    return { cid: mdata.cid, contentHash: mdata.content_hash, files: uploads };
   }, []);
 
   // ── getContract ───────────────────────────────────────────────────────────
@@ -429,12 +470,26 @@ export function ContractProvider({ children }) {
 
   // ── submitWork ────────────────────────────────────────────────────────────
 
-  const submitWork = useCallback(async (milestoneId, fileOrString) => {
+  // files: File[] | Blob | string  (always normalised to array internally)
+  // meta:  { notes, links } passed through into the IPFS manifest
+  const submitWork = useCallback(async (milestoneId, files, meta = {}) => {
     if (!escrow) throw new Error('Contracts not initialised. Connect your wallet first.');
-    let file = fileOrString;
-    if (typeof fileOrString === 'string') file = new Blob([fileOrString], { type: 'text/plain' });
 
-    const { cid, contentHash } = await uploadToIPFS(file);
+    // Normalise to an array of Blobs/Files
+    const fileList = Array.isArray(files) ? files
+      : typeof files === 'string'
+        ? [new Blob([files], { type: 'text/plain' })]
+        : [files];
+
+    let cid, contentHash;
+    if (fileList.length === 1 && !meta.notes && !meta.links) {
+      // Fast path — single file, no extra metadata
+      ({ cid, contentHash } = await uploadToIPFS(fileList[0]));
+    } else {
+      // Multi-file (or single file + metadata) — upload via manifest
+      ({ cid, contentHash } = await uploadFilesToIPFS(fileList, meta));
+    }
+
     const evidenceHashBytes32 = contentHash.startsWith('0x')
       ? contentHash.padEnd(66, '0') : '0x' + contentHash.padEnd(64, '0');
 
@@ -449,7 +504,7 @@ export function ContractProvider({ children }) {
         : c
     ));
     return { success: true, hash: receipt.hash, ipfsCID: cid, contentHash: evidenceHashBytes32 };
-  }, [escrow, sendTx, uploadToIPFS]);
+  }, [escrow, sendTx, uploadToIPFS, uploadFilesToIPFS]);
 
   // ── releasePayment ────────────────────────────────────────────────────────
 
@@ -666,7 +721,7 @@ export function ContractProvider({ children }) {
       getContract, getAllContracts, getTimeoutRefund,
       castVote, voteOnDispute, stakeToBeJuror, unstake, tallyVotes,
       getJurorStats,
-      uploadToIPFS,
+      uploadToIPFS, uploadFilesToIPFS,
       contractError, setContractError, lastTx,
       escrow, dispute, evidence, jury,
       etherscanTxLink, etherscanAddressLink,
