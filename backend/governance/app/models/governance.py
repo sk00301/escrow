@@ -32,7 +32,8 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import List
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -60,8 +61,10 @@ class GovernanceProposal(Base):
     created_at      = Column(DateTime(timezone=True), nullable=False, default=func.now())
     resolved_at     = Column(DateTime(timezone=True), nullable=True)
 
-    votes: list[GovernanceVote] = relationship(
-        "GovernanceVote", back_populates="proposal", cascade="all, delete-orphan"
+    votes: Mapped[List["GovernanceVote"]] = relationship(
+        "GovernanceVote",
+        back_populates="proposal",
+        cascade="all, delete-orphan"
     )
 
     __table_args__ = (
@@ -82,7 +85,10 @@ class GovernanceVote(Base):
     voted_at     = Column(DateTime(timezone=True), nullable=False, default=func.now())
     signature    = Column(Text, nullable=True)
 
-    proposal: GovernanceProposal = relationship("GovernanceProposal", back_populates="votes")
+    proposal: Mapped["GovernanceProposal"] = relationship(
+        "GovernanceProposal",
+        back_populates="votes"
+    )
 
     __table_args__ = (
         UniqueConstraint("proposal_id", "voter_wallet", name="uq_one_vote_per_wallet"),

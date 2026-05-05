@@ -22,4 +22,7 @@ types/
 venv/
 __pycache__/
 
+gven/
+__pycache__/
+
 .coverage

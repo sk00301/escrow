@@ -12,5 +12,5 @@ aiosqlite==0.20.0          # dev (SQLite)
 asyncpg==0.29.0            # prod (PostgreSQL)
 
 # ── Blockchain — wallet identity only, no transaction sending ──────────────────
-eth-account==0.11.2        # recover signer from MetaMask signature
+eth-account==0.13.1       # recover signer from MetaMask signature
 web3==7.2.0                # read completed milestones from Sepolia RPC

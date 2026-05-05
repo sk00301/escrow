@@ -23,6 +23,8 @@ import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
+from pydantic_settings import BaseSettings
+from typing import Optional
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

@@ -40,8 +40,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # ── Engine ────────────────────────────────────────────────────────────────────
-
-_db_url = settings.governance_database_url or settings.database_url
+_db_url = settings.database_url
 
 # SQLite needs check_same_thread disabled; PostgreSQL ignores it.
 _connect_args: dict = {}

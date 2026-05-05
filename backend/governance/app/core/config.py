@@ -6,19 +6,19 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_env: str = "development"
-    port:    int = 8001
+    port: int = 8001
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./governance.db"
+    database_url: str
 
     # Blockchain
-    alchemy_rpc_url:         str = ""
-    escrow_contract_address: str = ""
+    alchemy_rpc_url: str
+    escrow_contract_address: str
 
-    # Governance rules
-    voting_days:             int = 7
-    quorum:                  int = 10
-    max_active_proposals:    int = 2
+    # Governance rules (no defaults → must come from env)
+    voting_days: int
+    quorum: int
+    max_active_proposals: int
 
 
 @lru_cache
