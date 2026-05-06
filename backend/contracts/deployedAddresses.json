@@ -14,5 +14,6 @@
     "EvidenceRegistry": "https://sepolia.etherscan.io/address/0x1c9F7985388696c186116d2b4D81f0737709da75",
     "DisputeContract": "https://sepolia.etherscan.io/address/0x6B7FDb04929F1c817D954205723e22f2BEfa2d5a",
     "JuryStaking": "https://sepolia.etherscan.io/address/0xa0824C1aFDfd9E001948b09A2fb46d0bdDB19Ba6"
-  }
+  },
+  "EscrowContract": "0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f"
 }
