@@ -659,3 +659,99 @@
 [2026-05-05T23:25:45.697Z] [INFO] [6] Signature: 0xdebe1e2350932a2e24…
 [2026-05-05T23:25:46.202Z] [ERROR] [6] Gas estimation failed {"message":"execution reverted: \"EscrowContract: milestone does not exist\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a206d696c6573746f6e6520646f6573206e6f74206578697374000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: milestone does not exist\", transaction={ \"data\": \"0x5cacf2450000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000005500000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041debe1e2350932a2e24bf37158b024f9d76908d8555ed5e291ba64dcaf90da92b613b8394f5dc5f83358f9c342a934259d8e3e23a3ad122ae9321f5bb94ad89dd1b00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: milestone does not exist\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
 [2026-05-05T23:25:46.202Z] [ERROR] [6] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-06T02:00:28.576Z] [INFO] [oracle/submit-result] Request for milestone 0 score=0.85
+[2026-05-06T02:00:28.576Z] [INFO] [0] Preparing on-chain result post…
+[2026-05-06T02:00:28.576Z] [INFO] [0] Score: 0.85 → 85  |  Verdict: APPROVED
+[2026-05-06T02:00:28.580Z] [INFO] [0] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-06T02:00:28.586Z] [INFO] [0] Signature: 0x99412e36460c3b8e16…
+[2026-05-06T02:00:30.276Z] [INFO] [0] Tx sent: 0x854639e4c5dad253a4508e71d1d75c9cf680b1b2749fd072aa21d14cd16ebd5e
+[2026-05-06T02:00:38.754Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-06T02:00:38.755Z] [OK] [0] Result posted on-chain ✅
+[2026-05-06T02:00:38.755Z] [OK] [0] milestoneId:  0
+[2026-05-06T02:00:38.755Z] [OK] [0] score:        85/100
+[2026-05-06T02:00:38.755Z] [OK] [0] verdict:      APPROVED
+[2026-05-06T02:00:38.755Z] [OK] [0] txHash:       0x854639e4c5dad253a4508e71d1d75c9cf680b1b2749fd072aa21d14cd16ebd5e
+[2026-05-06T02:00:38.755Z] [OK] [0] block:        10798448
+[2026-05-06T02:00:38.755Z] [OK] [0] gasUsed:      84360
+[2026-05-06T02:00:38.755Z] [OK] [0] Etherscan: https://sepolia.etherscan.io/tx/0x854639e4c5dad253a4508e71d1d75c9cf680b1b2749fd072aa21d14cd16ebd5e
+[2026-05-06T02:00:38.755Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-06T02:06:34.841Z] [INFO] [oracle/submit-result] Request for milestone 1 score=0.75
+[2026-05-06T02:06:34.842Z] [INFO] [1] Preparing on-chain result post…
+[2026-05-06T02:06:34.842Z] [INFO] [1] Score: 0.75 → 75  |  Verdict: APPROVED
+[2026-05-06T02:06:34.847Z] [INFO] [1] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-06T02:06:34.857Z] [INFO] [1] Signature: 0xd1a576d2f7e85da369…
+[2026-05-06T02:06:35.984Z] [INFO] [1] Tx sent: 0x49f2c8bca0a02d43237849265ee25241a1b0f010a742d83ddbc729c122d7c381
+[2026-05-06T02:06:48.623Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-06T02:06:48.624Z] [OK] [1] Result posted on-chain ✅
+[2026-05-06T02:06:48.624Z] [OK] [1] milestoneId:  1
+[2026-05-06T02:06:48.624Z] [OK] [1] score:        75/100
+[2026-05-06T02:06:48.625Z] [OK] [1] verdict:      APPROVED
+[2026-05-06T02:06:48.625Z] [OK] [1] txHash:       0x49f2c8bca0a02d43237849265ee25241a1b0f010a742d83ddbc729c122d7c381
+[2026-05-06T02:06:48.625Z] [OK] [1] block:        10798478
+[2026-05-06T02:06:48.625Z] [OK] [1] gasUsed:      84389
+[2026-05-06T02:06:48.625Z] [OK] [1] Etherscan: https://sepolia.etherscan.io/tx/0x49f2c8bca0a02d43237849265ee25241a1b0f010a742d83ddbc729c122d7c381
+[2026-05-06T02:06:48.625Z] [OK] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[2026-05-06T02:11:21.260Z] [INFO] [oracle/submit-result] Request for milestone 1 score=0.35
+[2026-05-06T02:11:21.260Z] [INFO] [1] Preparing on-chain result post…
+[2026-05-06T02:11:21.261Z] [INFO] [1] Score: 0.35 → 35  |  Verdict: REJECTED
+[2026-05-06T02:11:21.265Z] [INFO] [1] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-06T02:11:21.271Z] [INFO] [1] Signature: 0x25c78319d0c6da6efd…
+[2026-05-06T02:11:21.746Z] [ERROR] [1] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid state transition\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964207374617465207472616e736974696f6e000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid state transition\", transaction={ \"data\": \"0x5cacf245000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000230000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000004125c78319d0c6da6efdb9f462dafa1e3c60d7f704cef9a3598c4635fd4bad923d22a9d012ca533cfbfb3591d0b9e65f576080b0d888b0d6b055e5762d5023da0e1c00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid state transition\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-06T02:11:21.746Z] [ERROR] [1] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-06T02:18:28.096Z] [INFO] [oracle/submit-result] Request for milestone 1 score=0.65
+[2026-05-06T02:18:28.096Z] [INFO] [1] Preparing on-chain result post…
+[2026-05-06T02:18:28.096Z] [INFO] [1] Score: 0.65 → 65  |  Verdict: DISPUTED
+[2026-05-06T02:18:28.101Z] [INFO] [1] Signing result hash with oracle wallet 0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA…
+[2026-05-06T02:18:28.105Z] [INFO] [1] Signature: 0xfbde69d00bad0fd4a7…
+[2026-05-06T02:18:28.746Z] [ERROR] [1] Gas estimation failed {"message":"execution reverted: \"EscrowContract: invalid state transition\" (action=\"estimateGas\", data=\"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000028457363726f77436f6e74726163743a20696e76616c6964207374617465207472616e736974696f6e000000000000000000000000000000000000000000000000\", reason=\"EscrowContract: invalid state transition\", transaction={ \"data\": \"0x5cacf2450000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000004100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000041fbde69d00bad0fd4a73a6b262f4660ef4eae0a84db9d478602e0736ecda3546a10605e6dde7cf3bd50b46e44b3bc02db0fd5d955d0bf6866e95aa63e0d4198811c00000000000000000000000000000000000000000000000000000000000000\", \"from\": \"0xb85528a61D5bE6e1e640e4a38F1232e7971c67EA\", \"to\": \"0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f\" }, invocation=null, revert={ \"args\": [ \"EscrowContract: invalid state transition\" ], \"name\": \"Error\", \"signature\": \"Error(string)\" }, code=CALL_EXCEPTION, version=6.16.0)"}
+[2026-05-06T02:18:28.746Z] [ERROR] [1] This usually means the oracle address is not authorised in EscrowContract
+[2026-05-06T02:57:11.857Z] [WARN] SIGINT received — shutting down oracle gracefully…
+[2026-05-06T02:57:16.943Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-06T02:57:16.958Z] [INFO]   Oracle Bridge Service starting…
+[2026-05-06T02:57:16.959Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-06T02:57:16.959Z] [INFO]   Escrow contract:  0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f
+[2026-05-06T02:57:16.959Z] [INFO]   AI service:       http://localhost:8000
+[2026-05-06T02:57:16.960Z] [INFO]   Status port:      3001
+[2026-05-06T02:57:16.960Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-05-06T02:57:16.960Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-06T02:57:16.973Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T02:57:17.070Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-05-06T02:57:17.091Z] [ERROR] WebSocket error {"message":"getaddrinfo EAI_AGAIN eth-sepolia.g.alchemy.com"}
+[2026-05-06T02:57:17.092Z] [WARN] WebSocket closed (code 1006) — scheduling reconnect…
+[2026-05-06T02:57:17.093Z] [WARN] Reconnect attempt 1/5 in 2000ms…
+[2026-05-06T02:57:19.095Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T02:57:19.104Z] [ERROR] WebSocket error {"message":"getaddrinfo EAI_AGAIN eth-sepolia.g.alchemy.com"}
+[2026-05-06T02:57:19.104Z] [WARN] WebSocket closed (code 1006) — scheduling reconnect…
+[2026-05-06T02:57:19.105Z] [WARN] Reconnect attempt 2/5 in 4000ms…
+[2026-05-06T02:57:23.109Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T02:57:23.117Z] [ERROR] WebSocket error {"message":"getaddrinfo EAI_AGAIN eth-sepolia.g.alchemy.com"}
+[2026-05-06T02:57:23.117Z] [WARN] WebSocket closed (code 1006) — scheduling reconnect…
+[2026-05-06T02:57:23.117Z] [WARN] Reconnect attempt 3/5 in 8000ms…
+[2026-05-06T02:57:31.122Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T02:57:31.132Z] [ERROR] WebSocket error {"message":"getaddrinfo EAI_AGAIN eth-sepolia.g.alchemy.com"}
+[2026-05-06T02:57:31.132Z] [WARN] WebSocket closed (code 1006) — scheduling reconnect…
+[2026-05-06T02:57:31.132Z] [WARN] Reconnect attempt 4/5 in 16000ms…
+[2026-05-06T02:57:47.133Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T02:57:47.150Z] [ERROR] WebSocket error {"message":"getaddrinfo EAI_AGAIN eth-sepolia.g.alchemy.com"}
+[2026-05-06T02:57:47.150Z] [WARN] WebSocket closed (code 1006) — scheduling reconnect…
+[2026-05-06T02:57:47.150Z] [WARN] Reconnect attempt 5/5 in 32000ms…
+[2026-05-06T02:58:19.153Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T02:58:24.710Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-05-06T02:58:24.735Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-05-06T02:58:24.746Z] [OK] Listening for WorkSubmitted on 0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f
+[2026-05-06T02:58:24.747Z] [OK] Reconnected and event listeners re-attached
+[2026-05-06T18:25:35.750Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-06T18:25:35.761Z] [INFO]   Oracle Bridge Service starting…
+[2026-05-06T18:25:35.761Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-06T18:25:35.761Z] [INFO]   Escrow contract:  0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f
+[2026-05-06T18:25:35.761Z] [INFO]   AI service:       http://localhost:8000
+[2026-05-06T18:25:35.761Z] [INFO]   Status port:      3001
+[2026-05-06T18:25:35.761Z] [INFO]   Log file:         /home/sk/escrow-platform/backend/oracle/oracle.log
+[2026-05-06T18:25:35.761Z] [INFO] ═══════════════════════════════════════════════════
+[2026-05-06T18:25:35.764Z] [INFO] Connecting WebSocket provider… {"url":"wss://eth-sepolia.g.alchemy.com/v2/DUJv0…"}
+[2026-05-06T18:25:35.779Z] [OK] Status server listening on http://localhost:3001/oracle/status
+[2026-05-06T18:25:38.544Z] [OK] WebSocket connected — network: sepolia (chainId: 11155111)
+[2026-05-06T18:25:38.564Z] [INFO] Attaching WorkSubmitted event listener…
+[2026-05-06T18:25:38.570Z] [OK] Listening for WorkSubmitted on 0x2196caAB78f691Ce641d8F9a22bfC3FD4a32314f
+[2026-05-06T18:25:38.570Z] [OK] Oracle is running. Waiting for WorkSubmitted events…
+[2026-05-06T18:25:38.571Z] [INFO] Press Ctrl+C to stop  |  curl http://localhost:3001/oracle/status

@@ -189,6 +189,7 @@ class DocumentVerifier:
         requirement_specification: str,
         required_keywords:         list[str] | None = None,
         thresholds:                dict[str, float] | None = None,
+        milestone_scope:           Any | None = None,
     ) -> dict[str, Any]:
         """
         Run the full document verification pipeline.
@@ -199,12 +200,21 @@ class DocumentVerifier:
             Full text of the freelancer's submitted document.
         requirement_specification : str
             The milestone's requirement text (from MilestoneDescriptor).
+            Ignored when milestone_scope is provided — scope.acceptance_criteria
+            is used as the specification instead.
         required_keywords : list[str], optional
             Keywords / phrases that must appear in the submission.
             Defaults to [] (keyword step contributes 1.0 if empty).
+            Ignored when milestone_scope is provided — scope.required_keywords
+            is used instead.
         thresholds : dict, optional
             Override scoring thresholds:
                 {"approval": 0.75, "ambiguity_low": 0.45}
+        milestone_scope : MilestoneScope | None, optional
+            When provided, restricts verification to this milestone's scope:
+              - scope.acceptance_criteria  replaces requirement_specification
+              - scope.required_keywords    replaces required_keywords
+              - scope.weight_overrides     overrides scoring weights
 
         Returns
         -------
@@ -212,17 +222,37 @@ class DocumentVerifier:
             Full explainability bundle (see Step 5 below).
         """
         start = time.monotonic()
-        required_keywords = required_keywords or []
         self._apply_overrides(thresholds)
+
+        # ── Resolve effective spec and keywords from scope ────────────────────
+        if milestone_scope is not None:
+            if milestone_scope.acceptance_criteria:
+                effective_spec = milestone_scope.acceptance_criteria
+            else:
+                effective_spec = requirement_specification
+            effective_keywords = milestone_scope.required_keywords or required_keywords or []
+            # Apply any per-milestone weight overrides
+            if milestone_scope.weight_overrides:
+                self._apply_overrides(milestone_scope.weight_overrides)
+            logger.info(
+                "document_verifier: scope applied — milestone=%d label='%s' "
+                "keywords=%d",
+                milestone_scope.milestone_number,
+                milestone_scope.label,
+                len(effective_keywords),
+            )
+        else:
+            effective_spec     = requirement_specification
+            effective_keywords = required_keywords or []
 
         # ── Step 1 — Semantic similarity ──────────────────────────────────────
         similarity_score, similarity_label = self._compute_similarity(
-            submitted_document, requirement_specification
+            submitted_document, effective_spec
         )
 
         # ── Step 2 — Keyword coverage ─────────────────────────────────────────
         found_kw, missing_kw, keyword_coverage = self._check_keywords(
-            submitted_document, required_keywords
+            submitted_document, effective_keywords
         )
 
         # ── Step 3 — Structure check ──────────────────────────────────────────
@@ -239,11 +269,25 @@ class DocumentVerifier:
 
         elapsed = round(time.monotonic() - start, 3)
 
+        # Build milestone metadata for the result bundle
+        if milestone_scope is not None:
+            milestone_meta = {
+                "number":        milestone_scope.milestone_number,
+                "label":         milestone_scope.label,
+                "scope_applied": True,
+                "scope_label":   f"Milestone {milestone_scope.milestone_number} — {milestone_scope.label}",
+            }
+        else:
+            milestone_meta = {"scope_applied": False}
+
         # ── Step 5 — Explainability bundle ────────────────────────────────────
         return {
             # ── Top-level decision ────────────────────────────────────────────
             "final_score": final_score,
             "verdict":     verdict,
+
+            # ── Milestone scope metadata ──────────────────────────────────────
+            "milestone": milestone_meta,
 
             # ── Semantic similarity ───────────────────────────────────────────
             "similarity": {
@@ -256,12 +300,12 @@ class DocumentVerifier:
 
             # ── Keyword coverage ──────────────────────────────────────────────
             "keywords": {
-                "required":        required_keywords,
+                "required":        effective_keywords,
                 "found":           found_kw,
                 "missing":         missing_kw,
                 "coverage":        round(keyword_coverage, 4),
                 "found_count":     len(found_kw),
-                "required_count":  len(required_keywords),
+                "required_count":  len(effective_keywords),
             },
 
             # ── Structure ─────────────────────────────────────────────────────

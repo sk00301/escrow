@@ -35,7 +35,7 @@ from pydantic import BaseModel, Field
 
 from app.core.job_store import JobStore
 from app.core.rate_limiter import RateLimiter
-from app.models.schemas import JobStatus, SubmissionType
+from app.models.schemas import JobStatus, MilestoneScope, SubmissionType
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -52,6 +52,14 @@ class TextVerifyRequest(BaseModel):
     acceptance_criteria:  str = Field(..., min_length=5, max_length=4096)
     deliverable_type:     str = Field("document", description="document | design | text")
     acceptance_threshold: float = Field(0.75, ge=0.0, le=1.0)
+    milestone_scope: MilestoneScope | None = Field(
+        default=None,
+        description=(
+            "Optional milestone scope. When provided, the LLM evaluates the submission "
+            "against scope.acceptance_criteria and scope.required_keywords only. "
+            "When None, the top-level acceptance_criteria field is used."
+        ),
+    )
 
 class TextVerifyResponse(BaseModel):
     job_id:  str
@@ -74,7 +82,7 @@ You MUST return ONLY a valid JSON object. No prose before or after. No markdown 
 _USER = """MILESTONE ACCEPTANCE CRITERIA:
 {acceptance_criteria}
 
-SUBMITTED DELIVERABLE ({deliverable_type}):
+{keyword_section}SUBMITTED DELIVERABLE ({deliverable_type}):
 ---
 {submission_text}
 ---
@@ -201,8 +209,31 @@ async def _run_text_verification(
             submission_text = submission_text[:MAX_TEXT_CHARS] + "\n\n[...truncated...]"
 
         # ── 2. Call LLM ────────────────────────────────────────────────────────
+        # When a milestone scope is provided, use its acceptance_criteria and
+        # inject the required keywords so the LLM knows exactly what to check.
+        scope = body.milestone_scope
+        if scope and scope.acceptance_criteria:
+            effective_criteria = scope.acceptance_criteria
+            logger.info(
+                "[text_verify] applying milestone scope=%d ('%s') to LLM evaluation",
+                scope.milestone_number,
+                scope.label,
+            )
+        else:
+            effective_criteria = body.acceptance_criteria
+
+        # Build the optional keyword section for the prompt
+        if scope and scope.required_keywords:
+            kw_list = ", ".join(f'"{k}"' for k in scope.required_keywords)
+            keyword_section = (
+                f"REQUIRED KEYWORDS (must all appear in the submission): {kw_list}\n\n"
+            )
+        else:
+            keyword_section = ""
+
         user_prompt = _USER.format(
-            acceptance_criteria=body.acceptance_criteria,
+            acceptance_criteria=effective_criteria,
+            keyword_section=keyword_section,
             deliverable_type=body.deliverable_type,
             submission_text=submission_text,
         )
@@ -236,6 +267,15 @@ async def _run_text_verification(
             "static_analysis": {"pylint_raw_score": None, "pylint_score": None, "flake8_violations": None},
             # Attach full LLM verdict for the UI
             "llm_verdict": verdict,
+            # Milestone scope metadata (None when no scope was applied)
+            "milestone": (
+                {
+                    "number": scope.milestone_number,
+                    "label":  scope.label,
+                    "scope_applied": True,
+                }
+                if scope else {"scope_applied": False}
+            ),
         }
 
         await job_store.mark_completed(job_id=job_id, result=result_dict)

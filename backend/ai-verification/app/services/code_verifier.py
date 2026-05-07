@@ -157,6 +157,7 @@ class CodeVerifier:
         submission: str,
         test_commands: list[str] | None = None,
         thresholds: dict[str, float] | None = None,
+        milestone_scope: Any | None = None,
     ) -> dict[str, Any]:
         """
         Run the full verification pipeline on a submission.
@@ -169,10 +170,16 @@ class CodeVerifier:
         test_commands : list[str], optional
             pytest commands to execute, e.g. ["pytest tests/", "pytest tests/unit/"].
             Defaults to ["pytest"] which discovers all tests automatically.
+            Ignored when milestone_scope is provided — scope.test_scope takes precedence.
         thresholds : dict, optional
             Override scoring thresholds:
               {"approval": 0.75, "ambiguity_low": 0.45,
                "weight_test": 0.60, "weight_pylint": 0.25, "weight_flake8": 0.15}
+        milestone_scope : MilestoneScope | None, optional
+            When provided, restricts verification to this milestone's deliverables:
+              - scope.test_scope   replaces test_commands
+              - scope.weight_overrides  overrides scoring weights
+              - scope label is included in the result bundle for the frontend
 
         Returns
         -------
@@ -188,8 +195,24 @@ class CodeVerifier:
         TestTimeoutError          — test suite exceeded timeout
         """
         start_time = time.monotonic()
-        test_commands = test_commands or ["pytest"]
+
+        # ── Resolve effective test commands ───────────────────────────────────
+        # Milestone scope takes precedence over the caller-supplied test_commands.
+        if milestone_scope is not None and milestone_scope.test_scope:
+            effective_test_commands = milestone_scope.test_scope
+            logger.info(
+                "scope_applied milestone=%d label='%s' test_commands=%s",
+                milestone_scope.milestone_number,
+                milestone_scope.label,
+                effective_test_commands,
+            )
+        else:
+            effective_test_commands = test_commands or ["pytest"]
+
+        # ── Apply threshold and weight overrides ──────────────────────────────
         self._apply_threshold_overrides(thresholds)
+        if milestone_scope is not None and milestone_scope.weight_overrides:
+            self._apply_threshold_overrides(milestone_scope.weight_overrides)
 
         work_dir: Path | None = None
         try:
@@ -197,7 +220,7 @@ class CodeVerifier:
             work_dir, submission_hash = self._ingest_submission(submission)
 
             # ── Step 2 — Run tests ───────────────────────────────────────────
-            test_results = self._run_tests(work_dir, test_commands)
+            test_results = self._run_tests(work_dir, effective_test_commands)
 
             # ── Step 3 — Static analysis ─────────────────────────────────────
             static_results = self._run_static_analysis(work_dir)
@@ -232,6 +255,7 @@ class CodeVerifier:
                 breakdown=breakdown,
                 submission_hash=submission_hash,
                 elapsed=elapsed,
+                milestone_scope=milestone_scope,
             )
 
         finally:
@@ -739,6 +763,7 @@ class CodeVerifier:
         breakdown: dict[str, Any],
         submission_hash: str,
         elapsed: float,
+        milestone_scope: Any | None = None,
     ) -> dict[str, Any]:
         """
         Assemble the full explainability bundle consumed by the React
@@ -753,10 +778,25 @@ class CodeVerifier:
             if t.status in ("FAILED", "ERROR")
         ]
 
+        # Build the milestone metadata block for the frontend
+        if milestone_scope is not None:
+            milestone_meta = {
+                "number":        milestone_scope.milestone_number,
+                "label":         milestone_scope.label,
+                "scope_applied": True,
+                "test_scope":    milestone_scope.test_scope,
+                "scope_label":   f"Milestone {milestone_scope.milestone_number} — {milestone_scope.label}",
+            }
+        else:
+            milestone_meta = {"scope_applied": False}
+
         return {
             # ── Top-level decision ────────────────────────────────────────────
             "final_score": final_score,
             "verdict": verdict,
+
+            # ── Milestone scope metadata ──────────────────────────────────────
+            "milestone": milestone_meta,
 
             # ── Test results ──────────────────────────────────────────────────
             "test_results": {

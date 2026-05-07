@@ -166,12 +166,13 @@ async def _run_verification(
             None,   # default ThreadPoolExecutor
             functools.partial(
                 verifier.verify,
-                submission    = submission,
-                test_commands = request.test_commands,
-                thresholds    = {
+                submission       = submission,
+                test_commands    = request.test_commands,
+                thresholds       = {
                     "approval":      request.acceptance_threshold,
                     "ambiguity_low": settings.ambiguity_band_low,
                 },
+                milestone_scope  = request.milestone_scope,
             ),
         )
 
@@ -298,6 +299,12 @@ async def submit_verification(
         test_commands       = body.test_commands,
         acceptance_threshold = body.acceptance_threshold,
     )
+    # Persist scope so it is visible on GET /result/{job_id}
+    job.milestone_scope = body.milestone_scope
+    if body.milestone_scope is not None:
+        job.milestone_scope_label = (
+            f"Milestone {body.milestone_scope.milestone_number} — {body.milestone_scope.label}"
+        )
 
     # ── Schedule background verification (non-blocking) ───────────────────────
     background_tasks.add_task(

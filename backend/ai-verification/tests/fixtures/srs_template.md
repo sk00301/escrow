@@ -176,3 +176,50 @@ assert calc.multiply(1000000, 1000000) == 1_000_000_000_000
   ![Architecture Diagram](./diagrams/architecture.png)
   ![Flow Chart](./diagrams/flow.png)
 -->
+
+---
+
+## 9. Milestone Deliverables
+
+<!--
+  REQUIRED when the project uses phased milestones.
+  Fill in one block per milestone. The AI verifier reads this section to
+  determine what to check at each submission — it will NOT penalise missing
+  features that are scheduled for a later milestone.
+
+  Rules:
+  - "Required functions" and "Required keywords" are comma-separated lists.
+  - "Test scope" must be a valid pytest command (or comma-separated list of them).
+  - "Acceptance criteria" is the plain-English spec the LLM evaluates against.
+    Keep it specific — "raises ValueError" not "handles errors".
+  - Weight fields (optional) must be decimals summing to 1.0. Omit to use
+    server defaults (test: 0.60, pylint: 0.25, flake8: 0.15 for code;
+    similarity: 0.50, keywords: 0.35, structure: 0.15 for documents).
+  - Copy the block below for each additional milestone.
+-->
+
+### Milestone 1 — <!-- short title, e.g. "Core scaffold" -->
+**Due:** <!-- YYYY-MM-DD -->
+**Required functions:** <!-- e.g. add, subtract -->
+**Required keywords:** <!-- e.g. input validation, basic arithmetic -->
+**Test scope:** <!-- e.g. pytest tests/unit/m1/ -->
+**Acceptance criteria:** <!-- milestone-specific description of what must work -->
+
+---
+<!-- Repeat the block above for each milestone -->
+
+### Milestone 2 — <!-- short title, e.g. "Advanced operations" -->
+**Due:** <!-- YYYY-MM-DD -->
+**Required functions:** <!-- e.g. multiply, divide -->
+**Required keywords:** <!-- e.g. zero division, edge cases -->
+**Test scope:** <!-- e.g. pytest tests/unit/m2/ -->
+**Acceptance criteria:** <!-- milestone-specific description -->
+
+---
+
+### Milestone 3 — Final delivery
+**Due:** <!-- YYYY-MM-DD -->
+**Required functions:** <!-- all functions from sections 2 & 3 -->
+**Required keywords:** <!-- all keywords from sections 4 & 5 -->
+**Test scope:** pytest tests/
+**Acceptance criteria:** <!-- full SRS acceptance criteria — copy from section 4 -->

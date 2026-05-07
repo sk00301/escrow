@@ -96,7 +96,14 @@ async def llm_verify(
         acceptance_threshold=body.acceptance_threshold,
     )
     job.llm_provider = llm_provider.name
+    # When a scope is present, the agent uses scope.acceptance_criteria.
+    # We still record the original field for audit/display purposes.
     job.acceptance_criteria = body.acceptance_criteria
+    job.milestone_scope = body.milestone_scope
+    if body.milestone_scope is not None:
+        job.milestone_scope_label = (
+            f"Milestone {body.milestone_scope.milestone_number} — {body.milestone_scope.label}"
+        )
 
     logger.info(
         "[llm_verify] job_created job_id=%s milestone=%s provider=%s",
@@ -186,23 +193,49 @@ async def _run_llm_verification(
             if len(submission_text) > MAX_CHARS:
                 submission_text = submission_text[:MAX_CHARS] + "\n\n[...truncated...]"
 
+            # When a scope is present, use its criteria and inject required keywords
+            scope = body.milestone_scope
+            if scope and scope.acceptance_criteria:
+                effective_criteria = scope.acceptance_criteria
+                logger.info(
+                    "[llm_verify] text path: applying scope milestone=%d ('%s')",
+                    scope.milestone_number, scope.label,
+                )
+            else:
+                effective_criteria = body.acceptance_criteria
+
             verdict = await _evaluate_text_with_llm(
                 llm_provider=llm_provider,
                 submission_text=submission_text,
-                acceptance_criteria=body.acceptance_criteria,
+                acceptance_criteria=effective_criteria,
             )
         else:
             # ── Code submission (zip or git repo) ─────────────────────────────
             logger.info("[llm_verify] content is a zip — routing to CodeVerificationAgent")
             agent = CodeVerificationAgent(llm=llm_provider, config=config)
             loop  = asyncio.get_event_loop()
+
+            # When a scope is present, use its criteria and test commands
+            scope = body.milestone_scope
+            if scope:
+                effective_criteria = scope.acceptance_criteria or body.acceptance_criteria
+                effective_test_cmds = scope.test_scope or body.test_commands
+                logger.info(
+                    "[llm_verify] code path: applying scope milestone=%d ('%s') "
+                    "test_commands=%s",
+                    scope.milestone_number, scope.label, effective_test_cmds,
+                )
+            else:
+                effective_criteria  = body.acceptance_criteria
+                effective_test_cmds = body.test_commands
+
             verdict = await loop.run_in_executor(
                 None,
                 lambda: asyncio.run(
                     agent.verify(
                         submission=submission,
-                        acceptance_criteria=body.acceptance_criteria,
-                        test_commands=body.test_commands,
+                        acceptance_criteria=effective_criteria,
+                        test_commands=effective_test_cmds,
                     )
                 ),
             )
@@ -216,6 +249,7 @@ async def _run_llm_verification(
 
         tool_metrics = verdict.get("tool_metrics", {})
         breakdown    = verdict.get("score_breakdown", {})
+        scope = body.milestone_scope
         result_dict  = {
             "final_score":    score,
             "verdict":        verdict_enum.value,
@@ -241,6 +275,16 @@ async def _run_llm_verification(
                 "flake8_violations": tool_metrics.get("flake8_violations", 0),
                 "flake8_score":      1.0,
             },
+            # Milestone scope metadata
+            "milestone": (
+                {
+                    "number":        scope.milestone_number,
+                    "label":         scope.label,
+                    "scope_applied": True,
+                    "scope_label":   f"Milestone {scope.milestone_number} — {scope.label}",
+                }
+                if scope else {"scope_applied": False}
+            ),
         }
 
         job = await job_store.mark_completed(job_id=job_id, result=result_dict)

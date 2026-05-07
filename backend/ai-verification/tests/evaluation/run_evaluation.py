@@ -144,6 +144,11 @@ def submit(
             "submission_value": submission_path,
             "test_commands":   case["test_commands"],
         }
+
+    # Attach milestone scope when present in the dataset case
+    if "milestone_scope" in case and case["milestone_scope"]:
+        body["milestone_scope"] = case["milestone_scope"]
+
     try:
         r = session.post(f"{base_url}{endpoint}", json=body, timeout=30)
         if r.status_code == 202:

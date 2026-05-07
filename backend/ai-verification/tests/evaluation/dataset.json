@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "description": "LLM verification evaluation \u2014 15 real projects",
+  "description": "LLM verification evaluation \u2014 15 real projects + 3 milestone-scoped regression cases",
   "accuracy_target": 0.8,
   "cases": [
     {
@@ -206,6 +206,93 @@
       "notes": "SRS-generated tests. Five fundamental logic errors across all functions.",
       "requires_test_generation": true,
       "srs_path": "srs_test_cases/case_c_rejected/srs.md"
+    },
+    {
+      "id": 19,
+      "folder": "srs_test_cases/case_a_approved",
+      "expected_verdict": "APPROVED",
+      "category": "milestone_scoped",
+      "acceptance_criteria": "Implement calculate_item_total and apply_tier_discount only.",
+      "test_commands": [
+        "pytest test_submission.py -v -k \"item_total or tier_discount\""
+      ],
+      "milestone_scope": {
+        "milestone_number": 1,
+        "label": "Core pricing engine",
+        "required_functions": [
+          "calculate_item_total",
+          "apply_tier_discount"
+        ],
+        "required_keywords": [
+          "item total",
+          "discount"
+        ],
+        "test_scope": [
+          "pytest test_submission.py -v -k \"item_total or tier_discount\""
+        ],
+        "acceptance_criteria": "Implement calculate_item_total raising ValueError for empty cart, zero/negative price or quantity. Implement apply_tier_discount supporting bronze/silver/gold/platinum tiers, raising ValueError for unknown tier."
+      },
+      "notes": "Milestone 1 scope: only the first two functions are checked. Full submission passes \u2014 APPROVED expected.",
+      "requires_test_generation": true,
+      "srs_path": "srs_test_cases/case_a_approved/srs.md"
+    },
+    {
+      "id": 20,
+      "folder": "srs_test_cases/case_c_rejected",
+      "expected_verdict": "REJECTED",
+      "category": "milestone_scoped",
+      "acceptance_criteria": "Implement clean_records and total_revenue with correct logic.",
+      "test_commands": [
+        "pytest test_submission.py -v -k \"clean_records or total_revenue\""
+      ],
+      "milestone_scope": {
+        "milestone_number": 1,
+        "label": "Data ingestion and totals",
+        "required_functions": [
+          "clean_records",
+          "total_revenue"
+        ],
+        "required_keywords": [
+          "clean",
+          "revenue"
+        ],
+        "test_scope": [
+          "pytest test_submission.py -v -k \"clean_records or total_revenue\""
+        ],
+        "acceptance_criteria": "Implement clean_records filtering empty/whitespace products AND negative revenue. Implement total_revenue summing the revenue field (not counting records)."
+      },
+      "notes": "Milestone 1 scope on case_c: the two functions in scope have fundamental bugs \u2014 REJECTED expected even with scoped evaluation.",
+      "requires_test_generation": true,
+      "srs_path": "srs_test_cases/case_c_rejected/srs.md"
+    },
+    {
+      "id": 21,
+      "folder": "srs_test_cases/case_b_disputed",
+      "expected_verdict": "DISPUTED",
+      "category": "milestone_scoped",
+      "acceptance_criteria": "Implement hash_password rejecting passwords shorter than 8 characters.",
+      "test_commands": [
+        "pytest test_submission.py -v -k hash_password"
+      ],
+      "milestone_scope": {
+        "milestone_number": 1,
+        "label": "Password hashing",
+        "required_functions": [
+          "hash_password",
+          "verify_password"
+        ],
+        "required_keywords": [
+          "password",
+          "hash"
+        ],
+        "test_scope": [
+          "pytest test_submission.py -v -k hash_password"
+        ],
+        "acceptance_criteria": "Implement hash_password that must reject passwords shorter than 8 characters (not 7). Implement verify_password checking the stored hash."
+      },
+      "notes": "Milestone 1 scope on case_b: off-by-one bug in password length check triggers a DISPUTED verdict even with reduced scope.",
+      "requires_test_generation": true,
+      "srs_path": "srs_test_cases/case_b_disputed/srs.md"
     }
   ]
 }

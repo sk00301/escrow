@@ -38,6 +38,106 @@ class Verdict(str, Enum):
     PENDING   = "PENDING"    # not yet determined
 
 
+# ── Milestone scope model ─────────────────────────────────────────────────────
+
+class MilestoneScope(BaseModel):
+    """
+    Deliverable constraints for a single project milestone.
+
+    Populated either by the client directly (structured request) or by
+    MilestoneResolver parsing the SRS  ## Milestone Deliverables  section.
+
+    When a MilestoneScope is attached to a verification request the
+    pipeline restricts ALL checks to this scope:
+      - CodeVerifier  uses  test_scope  instead of the top-level test_commands
+      - DocumentVerifier  uses  required_keywords  and  acceptance_criteria
+      - LLM agent  uses  acceptance_criteria  instead of the full SRS text
+
+    If no scope is provided, legacy full-SRS behaviour is used (backwards
+    compatible with all existing jobs).
+    """
+
+    milestone_number: int = Field(
+        ...,
+        ge=1,
+        description="1-based milestone number matching the SRS section.",
+        examples=[1, 2, 3],
+    )
+    label: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Short human-readable milestone title, e.g. 'Core scaffold'.",
+        examples=["Core scaffold", "Advanced operations", "Final delivery"],
+    )
+    required_functions: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Function/method names that MUST be implemented for this milestone. "
+            "CodeVerifier and the LLM agent check for their presence."
+        ),
+        examples=[["add", "subtract"], ["multiply", "divide"]],
+    )
+    required_keywords: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Keywords or phrases that must appear in a document submission. "
+            "DocumentVerifier checks these instead of the full SRS keyword list."
+        ),
+        examples=[["basic arithmetic", "input validation"], ["zero division"]],
+    )
+    test_scope: list[str] = Field(
+        default=["pytest"],
+        description=(
+            "Pytest commands to execute for this milestone. "
+            "Replaces the top-level test_commands when a scope is provided."
+        ),
+        examples=[["pytest tests/unit/m1/"], ["pytest tests/unit/m2/ -v"]],
+    )
+    acceptance_criteria: str = Field(
+        default="",
+        max_length=4096,
+        description=(
+            "Milestone-specific acceptance criteria text. "
+            "Used as the specification for LLM and DocumentVerifier evaluation "
+            "instead of the full SRS requirement text."
+        ),
+    )
+    weight_overrides: dict[str, float] = Field(
+        default_factory=dict,
+        description=(
+            "Optional per-milestone scoring weight overrides. "
+            "Keys: weight_test, weight_pylint, weight_flake8 (code) "
+            "or weight_similarity, weight_keywords, weight_structure (document). "
+            "Values are normalised to sum to 1.0 if they do not already."
+        ),
+        examples=[{"weight_test": 0.70, "weight_pylint": 0.20, "weight_flake8": 0.10}],
+    )
+
+    @model_validator(mode="after")
+    def normalise_weights(self) -> "MilestoneScope":
+        """Silently normalise weights that don't sum to 1.0 (±0.01)."""
+        if not self.weight_overrides:
+            return self
+        total = sum(self.weight_overrides.values())
+        if total == 0 or abs(total - 1.0) < 0.01:
+            return self
+        self.weight_overrides = {
+            k: round(v / total, 6) for k, v in self.weight_overrides.items()
+        }
+        return self
+
+    @field_validator("test_scope")
+    @classmethod
+    def validate_test_scope(cls, cmds: list[str]) -> list[str]:
+        for cmd in cmds:
+            if not cmd.strip().startswith("pytest"):
+                raise ValueError(
+                    f"test_scope entries must be pytest commands. Got: '{cmd}'"
+                )
+        return [c.strip() for c in cmds]
+
+
 # ── Request models ────────────────────────────────────────────────────────────
 
 class VerifyRequest(BaseModel):
@@ -101,6 +201,14 @@ class VerifyRequest(BaseModel):
     required_keywords: list[str] = Field(
         default_factory=list,
         description="Keywords that must appear in the document",
+    )
+    milestone_scope: MilestoneScope | None = Field(
+        default=None,
+        description=(
+            "Optional milestone scope. When provided, the verifier restricts all "
+            "checks (test commands, keywords, acceptance criteria) to this scope only. "
+            "When None, legacy full-SRS verification is used."
+        ),
     )
 
     @field_validator("submission_value")
@@ -211,6 +319,15 @@ class LLMVerifyRequest(BaseModel):
             "Defaults to the server-configured LLM_PROVIDER env var."
         ),
         examples=["openai", "ollama", None],
+    )
+    milestone_scope: MilestoneScope | None = Field(
+        default=None,
+        description=(
+            "Optional milestone scope. When provided, the LLM agent evaluates "
+            "the submission only against this milestone's acceptance_criteria and "
+            "required_functions, not the full SRS. When None, the top-level "
+            "acceptance_criteria field is used (legacy behaviour)."
+        ),
     )
 
     @field_validator("submission_value")
@@ -341,6 +458,21 @@ class Job(BaseModel):
     acceptance_criteria: str | None = Field(
         default=None,
         description="The acceptance criteria used for LLM evaluation.",
+    )
+
+    # ── Milestone scope (populated when a scoped request is made) ─────────────
+    milestone_scope: MilestoneScope | None = Field(
+        default=None,
+        description=(
+            "The milestone scope used for this job. None means full-SRS evaluation."
+        ),
+    )
+    milestone_scope_label: str | None = Field(
+        default=None,
+        description=(
+            "Human-readable scope label for the frontend, e.g. 'Milestone 1 — Core scaffold'. "
+            "None when no scope was applied."
+        ),
     )
 
     # ── Error info (populated on FAILED) ──────────────────────────────────────
